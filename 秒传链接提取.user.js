@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.1.7
+// @version           1.1.8
 // @description       用于提取百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -90,8 +90,12 @@
             r = DuParser.parseDu_v2(szUrl);
             r.ver = '游侠 v1';
         }
-        else {
+        else if (szUrl.indexOf('BaiduPCS-Go') ===0) {
             r = DuParser.parseDu_v3(szUrl);
+            r.ver = 'PCS-Go';
+        }
+        else {
+            r = DuParser.parseDu_v4(szUrl);
             r.ver = '梦姬标准';
         }
         return r;
@@ -138,6 +142,21 @@
         return arrFiles;
     };
     DuParser.parseDu_v3 = function parseDu_v3(szUrl) {
+        return szUrl.split('\n').map(function(z) {
+            // unsigned long long: 0~18446744073709551615
+            return z.trim().match(/-length=([\d]{1,20}) -md5=([\da-f]{32}) -slicemd5=([\da-f]{32}) -crc32=([\d]{1,20}) "([\s\S]+)"/)
+        }).filter(function(z) {
+            return z;
+        }).map(function(info) {
+            return {
+                md5: info[2],
+                md5s: info[3],
+                size: info[1],
+                name: info[5]
+            };
+        });
+    };
+    DuParser.parseDu_v4 = function parseDu_v4(szUrl) {
         return szUrl.split('\n').map(function(z) {
             // unsigned long long: 0~18446744073709551615
             return z.trim().match(/([\dA-F]{32})#([\dA-F]{32})#([\d]{1,20})#([\s\S]+)/);
@@ -251,7 +270,7 @@
             input: 'textarea',
             inputValue: str,
             showCancelButton: true,
-            inputPlaceholder: '[支持 PanDL/梦姬/游侠][支持批量]',
+            inputPlaceholder: '[支持 PanDL/梦姬/游侠/PCS-Go][支持批量]',
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             inputValidator: (value) => {
