@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.1.8
+// @version           1.1.9
 // @description       用于提取百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -187,7 +187,7 @@
                             var errno = codeInfo[i].errno;
                             var errText = checkErrno(errno);
                             var str1 = `文件名：${file_name}`;
-                            var str2 = `失败原因：${errText} (#${errno})`;
+                            var str2 = `失败原因：${errText}(#${errno})`;
                             var ele1 = document.createElement('p');
                             var ele2 = document.createElement('p');
                             var text1 = document.createTextNode(str1);
@@ -254,9 +254,11 @@
             case -8:
                 return '文件已存在';
             case 404:
-                return '文件不存在';
+                return '文件不存在(秒传无效)';
             case 2:
-                return '非法路径';
+                return '非法路径(重新登录/检查保存路径)';
+            case -10:
+            	return '网盘容量已满';
             case 114514:
                 return '接口调用失败';
             default:
