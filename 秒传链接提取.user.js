@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.1.9
+// @version           1.2.2
 // @description       用于提取百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -56,18 +56,21 @@
         }
     };
     SimpleBuffer.prototype.readUnicode = function readUnicode(index, size) {
-        if (size & 1)
+        if (size & 1){
             size++;
+        }
         var bufText = Array.prototype.slice.call(this.buf, index, index + size).map(SimpleBuffer.toStdHex);
         var buf = [''];
-        for (var i = 0; i < size; i += 2)
+        for (var i = 0; i < size; i += 2){
             buf.push(bufText[i + 1] + bufText[i]);
+        }
         return JSON.parse('"' + buf.join('\\u') + '"');
     };
     SimpleBuffer.prototype.readNumber = function readNumber(index, size) {
         var ret = 0;
-        for (var i = index + size; i > index;)
+        for (var i = index + size; i > index;){
             ret = this.buf[--i] + (ret * 256);
+        }
         return ret;
     };
     SimpleBuffer.prototype.readUInt = function readUInt(index) {
@@ -116,13 +119,15 @@
     };
     DuParser.parseDu_v2 = function parseDu_v2(szUrl) {
         var raw = atob(szUrl.slice(6).replace(/\s/g, ''));
-        if (raw.slice(0, 5) !== 'BDFS\x00')
+        if (raw.slice(0, 5) !== 'BDFS\x00'){
             return null;
+        }
         var buf = new SimpleBuffer(raw);
         var ptr = 9;
         var arrFiles = [];
         var fileInfo, nameSize;
         var total = buf.readUInt(5);
+        var i;
         for (i = 0; i < total; i++) {
             // 大小 (8 bytes)
             // MD5 + MD5S (0x20)
@@ -144,7 +149,7 @@
     DuParser.parseDu_v3 = function parseDu_v3(szUrl) {
         return szUrl.split('\n').map(function(z) {
             // unsigned long long: 0~18446744073709551615
-            return z.trim().match(/-length=([\d]{1,20}) -md5=([\da-f]{32}) -slicemd5=([\da-f]{32}) -crc32=([\d]{1,20}) "([\s\S]+)"/)
+            return z.trim().match(/-length=([\d]{1,20}) -md5=([\da-f]{32}) -slicemd5=([\da-f]{32})[\s\S]+"([\s\S]+)"/)
         }).filter(function(z) {
             return z;
         }).map(function(info) {
@@ -152,14 +157,14 @@
                 md5: info[2],
                 md5s: info[3],
                 size: info[1],
-                name: info[5]
+                name: info[4]
             };
         });
     };
     DuParser.parseDu_v4 = function parseDu_v4(szUrl) {
         return szUrl.split('\n').map(function(z) {
             // unsigned long long: 0~18446744073709551615
-            return z.trim().match(/([\dA-F]{32})#([\dA-F]{32})#([\d]{1,20})#([\s\S]+)/);
+            return z.trim().match(/([\dA-Fa-f]{32})#([\dA-Fa-f]{32})#([\d]{1,20})#([\s\S]+)/);
         }).filter(function(z) {
             return z;
         }).map(function(info) {
@@ -256,7 +261,7 @@
             case 404:
                 return '文件不存在(秒传无效)';
             case 2:
-                return '非法路径(重新登录/检查保存路径)';
+                return '转存失败(重新登录/检查保存路径)';
             case -10:
             	return '网盘容量已满';
             case 114514:
