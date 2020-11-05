@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.2.5
+// @version           1.2.6
 // @description       用于提取百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -643,8 +643,8 @@
                     if (dir.charAt(dir.length - 1) != '/') {
                         dir = dir + '/';
                     }
+                    save_alert();
                 }
-                save_alert();
             });
         }
     }
