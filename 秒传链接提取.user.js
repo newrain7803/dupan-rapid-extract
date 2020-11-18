@@ -1,8 +1,12 @@
+'use strict';
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.2.7
-// @description       用于提取百度网盘秒传链接
+// @version           1.3.1
+// @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
@@ -17,32 +21,42 @@
 // @run-at            document-start
 // @connect           *
 // ==/UserScript==
-! function () {
+!function () {
     'use strict';
-    const api_url = 'https://pan.baidu.com/api/list';
-    const pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
-    const appid_list = ['250528', '265486', '266719', '778750', '498065', '309847'];
+
+    var api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
+    var pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
+    var appid_list = ['250528', '265486', '266719', '778750', '498065', '309847'];
     //使用'250528', '265486', '266719'，下载50M以上的文件会报403，黑号情况下部分文件也会报403
-    const bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43'];
+    var bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43'];
     var select_list,
         failed = 0,
         check_mode = false,
         file_info_list = [],
         gen_success_list = [],
-        dir, file_num, gen_num, gen_prog, list_path, codeInfo, recursive, bdcode;
-    const html_btn = `<a class="g-button g-button-blue href="javascript:;" id="bdlink_btn" title="秒传链接" style="display: inline-block;"">
-    <span class="g-button-right"><em class="icon icon-disk" title="秒传链接提取"></em><span class="text" style="width: auto;">秒传链接</span></span></a>`;
-    const html_btn_gen = `<a class="g-button gen-bdlink-button"><span class="g-button-right"><em class="icon icon-share" title="生成秒传">
-    </em><span class="text">生成秒传</span></span></a>`;
-    const html_check_md5 = `<p style="width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;">测试秒传, 可防止秒传失效
-    <a class="g-button g-button-blue" id="check_md5_btn"><span class="g-button-right"><span class="text" style="width: auto;">测试</span>
-    </span></a></p><p>注意: 测试秒传会转存并覆盖文件,若在生成期间修改过同名文件,为避免修改的文件丢失,请不要使用此功能!</p>`;
+        dir,
+        file_num,
+        gen_num,
+        gen_prog,
+        list_path,
+        codeInfo,
+        recursive,
+        bdcode,
+        xmlhttpRequest;
+    var html_btn = '<a class="g-button g-button-blue href="javascript:;" id="bdlink_btn" title="\u79D2\u4F20\u94FE\u63A5" style="display: inline-block;"">\n    <span class="g-button-right"><em class="icon icon-disk" title="\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6"></em><span class="text" style="width: auto;">\u79D2\u4F20\u94FE\u63A5</span></span></a>';
+    var html_btn_gen = '<a class="g-button gen-bdlink-button"><span class="g-button-right"><em class="icon icon-share" title="\u751F\u6210\u79D2\u4F20">\n    </em><span class="text">\u751F\u6210\u79D2\u4F20</span></span></a>';
+    var html_check_md5 = '<p style="width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;">\u6D4B\u8BD5\u79D2\u4F20, \u53EF\u9632\u6B62\u79D2\u4F20\u5931\u6548\n    <a class="g-button g-button-blue" id="check_md5_btn"><span class="g-button-right"><span class="text" style="width: auto;">\u6D4B\u8BD5</span>\n    </span></a></p><p>\u6CE8\u610F: \u6D4B\u8BD5\u79D2\u4F20\u4F1A\u8F6C\u5B58\u5E76\u8986\u76D6\u6587\u4EF6,\u82E5\u5728\u751F\u6210\u671F\u95F4\u4FEE\u6539\u8FC7\u540C\u540D\u6587\u4EF6,\u4E3A\u907F\u514D\u4FEE\u6539\u7684\u6587\u4EF6\u4E22\u5931,\u8BF7\u4E0D\u8981\u4F7F\u7528\u6B64\u529F\u80FD!</p>';
+    var checkbox_par = {
+        input: 'checkbox',
+        inputValue: GM_getValue('with_path'),
+        inputPlaceholder: '导出文件夹目录结构'
+    };
 
     if (Base64.extendString) {
         Base64.extendString();
     }
 
-    let loop = setInterval(() => {
+    var loop = setInterval(function () {
         var html_tag = $("div.tcuLAu");
         if (!html_tag.length) return false;
         html_tag.append(html_btn);
@@ -52,7 +66,7 @@
         clearInterval(loop);
     }, 500);
 
-    function add_file_list(file_list, first) {
+    function add_file_list(file_list) {
         var dir_list = [];
         file_list.forEach(function (item) {
             if (item.isdir) {
@@ -60,89 +74,71 @@
             } else {
                 file_info_list.push({
                     'path': item.path,
-                    'size': item.size,
+                    'size': item.size
                 });
             }
         });
         if (dir_list.length) {
-            if (first) {
-                Swal.fire({
-                    type: 'info',
-                    title: '选择中包含文件夹, 是否递归生成?',
-                    text: '若选是，将同时生成各级子文件夹下的文件',
-                    allowOutsideClick: false,
-                    focusCancel: true,
-                    showCancelButton: true,
-                    reverseButtons: true,
-                    showCloseButton: true,
-                    confirmButtonText: '是',
-                    cancelButtonText: '否',
-                }).then((result) => {
-                    if (result.value) {
-                        recursive = true;
-                    } else if (
-                        result.dismiss === Swal.DismissReason.cancel
-                    ) {
-                        recursive = false;
-                    } else {
-                        return;
-                    }
-                    get_file_list(dir_list);
-                });
-            } else if (recursive) {
-                list_dir(dir_list, 0);
-            } else {
-                Gen_bdlink();
-            }
+            Swal.fire({
+                type: 'info',
+                title: '选择中包含文件夹, 是否递归生成?',
+                text: '若选是，将同时生成各级子文件夹下的文件',
+                allowOutsideClick: false,
+                focusCancel: true,
+                showCancelButton: true,
+                reverseButtons: true,
+                showCloseButton: true,
+                confirmButtonText: '是',
+                cancelButtonText: '否'
+            }).then(function (result) {
+                if (result.value) {
+                    recursive = true;
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    recursive = false;
+                } else {
+                    return;
+                }
+                add_dir_list(dir_list);
+            });
         } else {
             Gen_bdlink();
         }
     }
 
-    function get_file_list(dir_list) {
-        Swal.fire({
-            title: '正在获取文件列表, 请稍等',
-            html: '<p><list_path></list_path></p>',
-            allowOutsideClick: false,
-            onBeforeOpen: () => {
-                Swal.showLoading();
-                var content = Swal.getContent();
-                if (content) {
-                    list_path = content.querySelector('list_path');
-                    list_dir(dir_list, 0);
-                }
-            }
-        });
-    }
+    function add_dir_list(dir_list) {
+        var dir_id = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
-    function list_dir(dir_list, dir_id, output_list = []) {
         if (dir_id >= dir_list.length) {
-            add_file_list(output_list, false);
+            Gen_bdlink();
             return;
         }
         var path = dir_list[dir_id];
-        list_path.textContent = path;
         var list_dir_par = {
-            url: api_url + `?app_id=250528&dir=${encodeURIComponent(path)}&num=0`,
+            url: api_url + ('&path=' + encodeURIComponent(path) + '&recursion=' + (recursive ? 1 : 0)),
             type: 'GET',
             responseType: 'json',
-            onload: function (r) {
+            onload: function onload(r) {
                 if (!r.response.errno) {
-                    output_list = output_list.concat(r.response.list);
+                    r.response.list.forEach(function (item) {
+                        item.isdir || file_info_list.push({
+                            'path': item.path,
+                            'size': item.size
+                        });
+                    });
                 } else {
                     file_info_list.push({
                         'path': path,
                         'errno': 810
                     });
                 }
-                list_dir(dir_list, dir_id + 1, output_list);
+                add_dir_list(dir_list, dir_id + 1);
             },
-            onerror: function (r) {
+            onerror: function onerror(r) {
                 file_info_list.push({
                     'path': path,
                     'errno': 114514
                 });
-                list_dir(dir_list, dir_id + 1, output_list);
+                add_dir_list(dir_list, dir_id + 1);
             }
         };
         GM_xmlhttpRequest(list_dir_par);
@@ -155,12 +151,12 @@
                     title: '首次使用请注意',
                     showCloseButton: true,
                     allowOutsideClick: false,
-                    html: '<p>弹出跨域访问窗口时, 请选择 "总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://i.loli.net/2020/11/01/U2kxfmnGlweqhbt.png">'
-                }).then((result) => {
+                    html: '<p>弹出跨域访问窗口时, 请选择 "总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://ae01.alicdn.com/kf/Hb4658cfae9fa4ae6bf3b87a5891604014.png">'
+                }).then(function (result) {
                     if (result.value) {
                         GM_setValue('gen_no_first', true);
                         select_list = getSelectedFileList();
-                        add_file_list(select_list, true);
+                        add_file_list(select_list);
                     }
                 });
                 return;
@@ -173,19 +169,20 @@
                     allowOutsideClick: false,
                     confirmButtonText: '确定',
                     cancelButtonText: '取消'
-                }).then((result) => {
+                }).then(function (result) {
                     if (result.value) {
-                        file_info_list = GM_getValue('unfinish').file_info_list;
-                        Gen_bdlink(GM_getValue('unfinish').file_id);
+                        var unfinish_info = GM_getValue('unfinish');
+                        file_info_list = unfinish_info.file_info_list;
+                        Gen_bdlink(unfinish_info.file_id);
                     } else {
                         GM_deleteValue('unfinish');
                         select_list = getSelectedFileList();
-                        add_file_list(select_list, true);
+                        add_file_list(select_list);
                     }
                 });
             } else {
                 select_list = getSelectedFileList();
-                add_file_list(select_list, true);
+                add_file_list(select_list);
             }
         });
     }
@@ -208,13 +205,16 @@
         return unsafeWindow.require("system-core:context/context.js").instanceForSystem;
     };
 
-    function Gen_bdlink(file_id = 0) {
+    function Gen_bdlink() {
+        var file_id = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
         Swal.fire({
             title: '秒传生成中',
+            showCloseButton: true,
             allowOutsideClick: false,
             html: '<p>正在生成第 <gen_num></gen_num> 个</p><p><gen_prog></gen_prog></p>',
-            onBeforeOpen: () => {
-                Swal.showLoading()
+            onBeforeOpen: function onBeforeOpen() {
+                Swal.showLoading();
                 var content = Swal.getContent();
                 if (content) {
                     gen_num = content.querySelector('gen_num');
@@ -222,14 +222,23 @@
                     myGenerater(file_id);
                 }
             }
+        }).then(function (result) {
+            if (result.dismiss && xmlhttpRequest) {
+                xmlhttpRequest.abort();
+                GM_deleteValue('unfinish');
+                file_info_list = [];
+            }
         });
     }
 
-    var show_prog = function (r) {
-        gen_prog.textContent = `${parseInt((r.loaded/r.total)*100)}%`;
+    var show_prog = function show_prog(r) {
+        gen_prog.textContent = parseInt(r.loaded / r.total * 100) + '%';
     };
 
-    function myGenerater(file_id, appid_id = 0, failed = false) {
+    function myGenerater(file_id) {
+        var appid_id = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+        var failed = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
         if (file_id >= file_info_list.length) {
             bdcode = '';
             var failed_info = '';
@@ -237,36 +246,45 @@
             file_info_list.forEach(function (item) {
                 if (item.hasOwnProperty('errno')) {
                     gen_failed++;
-                    failed_info += `<p>文件：${item.path}</p><p>失败原因：${checkErrno(item.errno)}(#${item.errno})</p>`
+                    failed_info += '<p>\u6587\u4EF6\uFF1A' + item.path + '</p><p>\u5931\u8D25\u539F\u56E0\uFF1A' + checkErrno(item.errno) + '(#' + item.errno + ')</p>';
                 } else {
                     gen_success_list.push(item);
-                    bdcode += `${item.md5}#${item.md5s}#${item.size}#${item.path}\n`;
+                    bdcode += item.md5 + '#' + item.md5s + '#' + item.size + '#' + item.path + '\n';
                 }
             });
             bdcode = bdcode.trim();
             if (failed_info) {
-                failed_info = '<p><br></p><p>失败文件列表:</p>' + failed_info;
+                failed_info = '<p>失败文件列表:</p>' + failed_info;
             }
             GM_deleteValue('unfinish');
-            Swal.fire({
-                title: `生成完毕 共${file_info_list.length}个, 失败${gen_failed}个!`,
+            Swal.fire(_extends({
+                title: '\u751F\u6210\u5B8C\u6BD5 \u5171' + file_info_list.length + '\u4E2A, \u5931\u8D25' + gen_failed + '\u4E2A!',
                 confirmButtonText: '复制秒传代码',
+                cancelButtonText: '取消',
                 showCloseButton: true,
+                showCancelButton: !bdcode,
+                showConfirmButton: bdcode,
                 allowOutsideClick: false,
-                html: html_check_md5 + failed_info,
-                onBeforeOpen: () => {
+                html: bdcode ? html_check_md5 + (failed_info && '<p><br></p>' + failed_info) : failed_info
+            }, bdcode && checkbox_par, {
+                onBeforeOpen: function onBeforeOpen() {
                     $("#check_md5_btn").click(function () {
                         codeInfo = gen_success_list;
                         check_mode = true;
                         Process();
                     });
                 }
-            }).then((result) => {
-                file_info_list = [];
-                gen_success_list = [];
-                if (result.value) {
+            })).then(function (result) {
+                if (!result.dismiss) {
+                    if (!result.value) {
+                        bdcode = bdcode.replace(/\/.+\//g, '');
+                    }
+                    checkbox_par.inputValue = result.value;
+                    GM_setValue('with_path', result.value);
                     GM_setClipboard(bdcode);
                 }
+                file_info_list = [];
+                gen_success_list = [];
             });
             return;
         }
@@ -289,19 +307,19 @@
         }
 
         var get_dl_par = {
-            url: pcs_url + `?app_id=${appid_list[appid_id]}&method=download&path=${encodeURIComponent(path)}`,
+            url: pcs_url + ('?app_id=' + appid_list[appid_id] + '&method=download&path=' + encodeURIComponent(path)),
             type: 'GET',
             headers: {
-                'Range': `bytes=0-${dl_size}`
+                'Range': 'bytes=0-' + dl_size
             },
             responseType: 'arraybuffer',
             onprogress: show_prog,
-            onerror: function (r) {
+            onerror: function onerror(r) {
                 file_info.errno = 114514;
                 myGenerater(file_id + 1);
             },
-            onload: function (r) {
-                if (parseInt(r.status / 100) == 2) {
+            onload: function onload(r) {
+                if (parseInt(r.status / 100) === 2) {
                     var responseHeaders = r.responseHeaders;
                     var file_md5 = responseHeaders.match(/content-md5: ([\da-f]{32})/);
                     if (file_md5) {
@@ -325,7 +343,7 @@
                     myGenerater(file_id + 1);
                 } else {
                     if (r.status == 403 && appid_id < appid_list.length - 1) {
-                        myGenerater(path, file_id, appid_id + 1, true);
+                        myGenerater(file_id, appid_id + 1, true);
                     } else {
                         file_info.errno = r.status;
                         myGenerater(file_id + 1);
@@ -333,7 +351,7 @@
                 }
             }
         };
-        GM_xmlhttpRequest(get_dl_par);
+        xmlhttpRequest = GM_xmlhttpRequest(get_dl_par);
     };
 
     /**
@@ -368,7 +386,7 @@
     SimpleBuffer.prototype.readNumber = function readNumber(index, size) {
         var ret = 0;
         for (var i = index + size; i > index;) {
-            ret = this.buf[--i] + (ret * 256);
+            ret = this.buf[--i] + ret * 256;
         }
         return ret;
     };
@@ -449,7 +467,7 @@
     DuParser.parseDu_v3 = function parseDu_v3(szUrl) {
         return szUrl.split('\n').map(function (z) {
             // unsigned long long: 0~18446744073709551615
-            return z.trim().match(/-length=([\d]{1,20}) -md5=([\da-f]{32}) -slicemd5=([\da-f]{32})[\s\S]+"([\s\S]+)"/)
+            return z.trim().match(/-length=([\d]{1,20}) -md5=([\da-f]{32}) -slicemd5=([\da-f]{32})[\s\S]+"([\s\S]+)"/);
         }).filter(function (z) {
             return z;
         }).map(function (info) {
@@ -480,19 +498,20 @@
 
     function saveFile(i, try_flag) {
         if (i >= codeInfo.length) {
-            Swal.fire({
-                title: `${check_mode?'测试':'转存'}完毕 共${codeInfo.length}个 失败${failed}个!`,
+            Swal.fire(_extends({
+                title: (check_mode ? '测试' : '转存') + '\u5B8C\u6BD5 \u5171' + codeInfo.length + '\u4E2A \u5931\u8D25' + failed + '\u4E2A!',
                 confirmButtonText: check_mode ? '复制秒传代码' : '确定',
                 showCloseButton: true,
-                html: '',
-                onBeforeOpen: () => {
+                html: ''
+            }, check_mode && checkbox_par, {
+                onBeforeOpen: function onBeforeOpen() {
                     var content = Swal.getContent();
                     codeInfo.forEach(function (item) {
                         if (item.hasOwnProperty('errno')) {
                             var file_name = item.path;
                             var errText = checkErrno(item.errno);
-                            var str1 = `文件名：${file_name}`;
-                            var str2 = `失败原因：${errText}(#${item.errno})`;
+                            var str1 = '\u6587\u4EF6\u540D\uFF1A' + file_name;
+                            var str2 = '\u5931\u8D25\u539F\u56E0\uFF1A' + errText + '(#' + item.errno + ')';
                             var ele1 = document.createElement('p');
                             var ele2 = document.createElement('p');
                             var text1 = document.createTextNode(str1);
@@ -503,23 +522,27 @@
                             content.appendChild(ele2);
                         }
                     });
-                    const _dir = (dir || '').replace(/\/$/, '');
+                    var _dir = (dir || '').replace(/\/$/, '');
                     if (_dir) {
-                        const cBtn = Swal.getConfirmButton();
-                        const btn = cBtn.cloneNode();
+                        var cBtn = Swal.getConfirmButton();
+                        var btn = cBtn.cloneNode();
                         btn.textContent = '打开目录';
                         btn.style.backgroundColor = '#ecae3c';
-                        btn.onclick = () => {
-                            location.href = `${location.origin}/disk/home?#/all?vmode=list&path=${encodeURIComponent(_dir)}`;
+                        btn.onclick = function () {
+                            location.href = location.origin + '/disk/home?#/all?vmode=list&path=' + encodeURIComponent(_dir);
                             Swal.close();
-                        }
+                        };
                         cBtn.before(btn);
                     }
-
                 }
-            }).then((result) => {
+            })).then(function (result) {
                 if (check_mode) {
-                    if (result.value) {
+                    if (!result.dismiss) {
+                        if (!result.value) {
+                            bdcode = bdcode.replace(/\/.+\//g, '');
+                        }
+                        checkbox_par.inputValue = result.value;
+                        GM_setValue('with_path', result.value);
                         GM_setClipboard(bdcode);
                     }
                     file_info_list = [];
@@ -535,7 +558,7 @@
         var file = codeInfo[i];
         file_num.textContent = (i + 1).toString() + ' / ' + codeInfo.length.toString();
         $.ajax({
-            url: `/api/rapidupload${check_mode?'?rtype=3':''}`,
+            url: '/api/rapidupload' + (check_mode ? '?rtype=3' : ''),
             type: 'POST',
             data: {
                 path: dir + file.path,
@@ -561,7 +584,7 @@
         }).always(function () {
             if (!try_flag && first_404) {
                 // try UpperCase md5
-                saveFile(i, true)
+                saveFile(i, true);
             } else {
                 saveFile(i + 1, false);
             }
@@ -577,7 +600,7 @@
             case 404:
                 return '文件不存在(秒传无效)';
             case 2:
-                return '转存失败(重新登录/检查保存路径)';
+                return '转存失败(请重新登录网盘账号)';
             case -10:
                 return '网盘容量已满';
             case 114514:
@@ -587,13 +610,15 @@
             case 810:
                 return '文件列表获取失败(请重试)';
             case 996:
-                return 'md5获取失败(请重试)';
+                return 'md5获取失败(请等待一段时间再重试)';
             default:
                 return '未知错误';
         }
     }
 
-    function GetInfo(str = '') {
+    function GetInfo() {
+        var str = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
         Swal.fire({
             title: '请输入提取码',
             input: 'textarea',
@@ -602,7 +627,7 @@
             inputPlaceholder: '[支持 PanDL/梦姬/游侠/PCS-Go][支持批量]',
             confirmButtonText: '确定',
             cancelButtonText: '取消',
-            inputValidator: (value) => {
+            inputValidator: function inputValidator(value) {
                 if (!value) {
                     return '链接不能为空';
                 }
@@ -611,7 +636,7 @@
                     return '未识别到正确的链接';
                 }
             }
-        }).then((result) => {
+        }).then(function (result) {
             if (result.value) {
                 Process();
             }
@@ -629,14 +654,18 @@
             }
             Swal.fire({
                 title: '请输入保存路径',
-                text: '不要填写例如D:\\GTA5这种本地路径!',
                 input: 'text',
                 inputPlaceholder: '格式示例：/GTA5/，默认保存在根目录',
                 inputValue: dir,
                 showCancelButton: true,
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
-            }).then((result) => {
+                inputValidator: function inputValidator(value) {
+                    if (value.match(/['"\\\:*?<>|]/)) {
+                        return '路径中不能含有以下字符\'"\\:*?<>|，格式示例：/GTA5/';
+                    }
+                }
+            }).then(function (result) {
                 if (!result.dismiss) {
                     dir = result.value;
                     GM_setValue('last_dir', dir);
@@ -651,11 +680,11 @@
 
     function save_alert() {
         Swal.fire({
-            title: `文件${check_mode?'测试':'提取'}中`,
-            html: `正在${check_mode?'测试':'转存'}第 <file_num></file_num> 个`,
+            title: '\u6587\u4EF6' + (check_mode ? '测试' : '提取') + '\u4E2D',
+            html: '\u6B63\u5728' + (check_mode ? '测试' : '转存') + '\u7B2C <file_num></file_num> \u4E2A',
             allowOutsideClick: false,
-            onBeforeOpen: () => {
-                Swal.showLoading()
+            onBeforeOpen: function onBeforeOpen() {
+                Swal.showLoading();
                 var content = Swal.getContent();
                 if (content) {
                     file_num = content.querySelector('file_num');
@@ -669,15 +698,18 @@
         var bdlink = href.match(/[\?#]bdlink=([\da-zA-Z/\+]+)&?/);
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
-            GetInfo(bdlink)
-        } else if (!GM_getValue('1.2.5_no_first')) {
+            GetInfo(bdlink);
+        } else if (!GM_getValue('1.2.9_no_first')) {
             Swal.fire({
-                title: `秒传链接提取 1.2.5 更新内容(20.11.4):`,
+                title: '\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6 1.2.9 \u66F4\u65B0\u5185\u5BB9(20.11.11):',
                 html: update_info,
+                heightAuto: false,
+                scrollbarPadding: false,
+                showCloseButton: true,
                 allowOutsideClick: false,
                 confirmButtonText: '确定'
-            }).then((result) => {
-                GM_setValue('1.2.5_no_first', true)
+            }).then(function (result) {
+                GM_setValue('1.2.9_no_first', true);
             });
         }
     }
@@ -687,40 +719,9 @@
         while (new Date().getTime() < startTime) {}
     };
 
-    const update_info =
-        `<p>优化按钮样式，添加了md5获取失败的报错</p>
+    var update_info = '<div class="panel-body" style="height: 250px; overflow-y:scroll">\n        <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>\n\n        <p>\u751F\u6210\u79D2\u4F20\u7684\u5F39\u7A97\u6DFB\u52A0\u4E86\u5173\u95ED\u6309\u94AE</p>\n        \n        <p>\u5220\u9664\u4E86\u5168\u90E8\u751F\u6210\u5931\u8D25\u65F6\u7684\u590D\u5236\u548C\u6D4B\u8BD5\u6309\u94AE</p>\n\n        <p>\u79D2\u4F20\u751F\u6210\u540E\u52A0\u4E86\u4E00\u4E2A\u5BFC\u51FA\u6587\u4EF6\u8DEF\u5F84\u7684\u9009\u9879(\u9ED8\u8BA4\u4E0D\u5BFC\u51FA)</p>\n\n        <p>\u5728\u8F93\u5165\u4FDD\u5B58\u8DEF\u5F84\u7684\u5F39\u7A97\u6DFB\u52A0\u4E86\u6821\u9A8C\uFF0C\u9632\u6B62\u8F93\u5165\u9519\u8BEF\u8DEF\u5F84</p>\n\n        <p><br></p>\n\n        <p>\u82E5\u51FA\u73B0\u4EFB\u4F55\u95EE\u9898\u8BF7\u524D\u5F80<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork\u9875</a>\u53CD\u9988</p>\n\n        <p><br></p>\n\n        <p>1.2.5 \u66F4\u65B0\u5185\u5BB9(20.11.4):</p>\n        \n        <p>\u4F18\u5316\u6309\u94AE\u6837\u5F0F\uFF0C\u6DFB\u52A0\u4E86md5\u83B7\u53D6\u5931\u8D25\u7684\u62A5\u9519</p>\n\n        <p>\u4FEE\u590D\u4ECEpan.baidu.com\u8FDB\u5165\u540E\u4E0D\u663E\u793A\u751F\u6210\u6309\u94AE\u7684\u95EE\u9898</p>\n        \n        <p><br></p>\n        \n        <p>1.2.4 \u66F4\u65B0\u5185\u5BB9(20.11.2):</p>\n        \n        <p>\u65B0\u589E\u751F\u6210\u79D2\u4F20:</p>\n        \n        <p>\u9009\u62E9\u6587\u4EF6\u6216\u6587\u4EF6\u5939\u540E\u70B9\u51FB "\u751F\u6210\u79D2\u4F20" \u5373\u53EF\u5F00\u59CB\u751F\u6210</p>\n        \n        <p><br></p>\n        \n        <p>\u7EE7\u7EED\u672A\u5B8C\u6210\u4EFB\u52A1:</p>\n        \n        <p>\u82E5\u751F\u6210\u79D2\u4F20\u671F\u95F4\u5173\u95ED\u4E86\u7F51\u9875, \u518D\u6B21\u70B9\u51FB "\u751F\u6210\u79D2\u4F20" \u5373\u53EF\u7EE7\u7EED\u4EFB\u52A1</p>\n        \n        <p><br></p>\n        \n        <p>\u6D4B\u8BD5\u79D2\u4F20\u529F\u80FD:</p>\n        \n        <p>\u751F\u6210\u5B8C\u6210\u540E, \u70B9\u51FB"\u6D4B\u8BD5"\u6309\u94AE, \u4F1A\u81EA\u52A8\u8F6C\u5B58\u5E76\u8986\u76D6\u6587\u4EF6(\u6587\u4EF6\u5185\u5BB9\u4E0D\u53D8), \u4EE5\u68C0\u6D4B\u79D2\u4F20\u6709\u6548\u6027, \u4EE5\u53CA\u4FEE\u590Dmd5\u9519\u8BEF\u9632\u6B62\u79D2\u4F20\u5931\u6548</p>\n        \n        </span></div></div>';
 
-        <p>修复从pan.baidu.com进入后不显示生成按钮的问题</p>
-        
-        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
-        
-        <p>
-            <br>
-        </p>
-        
-        <p>1.2.4 更新内容(20.11.2):</p>
-        
-        <p>新增生成秒传:</p>
-        
-        <p>选择文件或文件夹后点击 "生成秒传" 即可开始生成</p>
-        
-        <p>
-            <br>
-        </p>
-        
-        <p>继续未完成任务:</p>
-        
-        <p>若生成秒传期间关闭了网页, 再次点击 "生成秒传" 即可继续任务</p>
-        
-        <p>
-            <br>
-        </p>
-        
-        <p>测试秒传功能:</p>
-        
-        <p>生成完成后, 点击"测试"按钮, 会自动转存并覆盖文件(文件内容不变), 以检测秒传有效性, 以及修复md5错误防止秒传失效</p>`;
-
-    const href = window.location.href;
+    var href = window.location.href;
     document.addEventListener('DOMContentLoaded', GetInfo_url);
     document.addEventListener('DOMContentLoaded', initButtonHome);
 }();
