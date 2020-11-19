@@ -5,7 +5,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.3.1
+// @version           1.3.2
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -421,7 +421,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
     DuParser.parseDu_v1 = function parseDu_v1(szUrl) {
         return szUrl.replace(/\s*bdpan:\/\//g, ' ').trim().split(' ').map(function (z) {
-            return z.trim().fromBase64().match(/([\s\S]+)\|([\d]{1,20})\|([\da-f]{32})\|([\da-f]{32})/);
+            return z.trim().fromBase64().match(/([\s\S]+)\|([\d]{1,20})\|([\dA-Fa-f]{32})\|([\dA-Fa-f]{32})/);
         }).filter(function (z) {
             return z;
         }).map(function (info) {
@@ -467,7 +467,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
     DuParser.parseDu_v3 = function parseDu_v3(szUrl) {
         return szUrl.split('\n').map(function (z) {
             // unsigned long long: 0~18446744073709551615
-            return z.trim().match(/-length=([\d]{1,20}) -md5=([\da-f]{32}) -slicemd5=([\da-f]{32})[\s\S]+"([\s\S]+)"/);
+            return z.trim().match(/-length=([\d]{1,20}) -md5=([\dA-Fa-f]{32}) -slicemd5=([\dA-Fa-f]{32})[\s\S]+"([\s\S]+)"/);
         }).filter(function (z) {
             return z;
         }).map(function (info) {
