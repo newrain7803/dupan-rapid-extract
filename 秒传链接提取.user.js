@@ -652,8 +652,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             if (!dir) {
                 dir = '';
             }
-            let match = /path=([\%0-9a-zA-Z]+)/.exec(document.location);
-            if (match !== null && match.length == 2) {
+            let match = /path=([^\&.]+)/.exec(document.location);
+            if (match !== null && match.length == 2 && match[1] != "") {
                 dir = decodeURIComponent(match[1]);
             }
             Swal.fire({
