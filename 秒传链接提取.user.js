@@ -652,10 +652,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             if (!dir) {
                 dir = '';
             }
+            let match = /path=([\%0-9a-zA-Z]+)/.exec(document.location);
+            if (match !== null && match.length == 2) {
+                dir = decodeURIComponent(match[1]);
+            }
             Swal.fire({
                 title: '请输入保存路径',
                 input: 'text',
-                inputPlaceholder: '格式示例：/GTA5/，默认保存在根目录',
+                inputLabel: '格式示例：/GTA5/，默认保存在根目录',
                 inputValue: dir,
                 showCancelButton: true,
                 confirmButtonText: '确定',
