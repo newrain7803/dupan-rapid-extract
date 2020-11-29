@@ -10,7 +10,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
-// @require           https://cdn.jsdelivr.net/npm/sweetalert2@8
+// @require           https://cdn.jsdelivr.net/npm/sweetalert2@10
 // @require           https://cdn.jsdelivr.net/npm/js-base64
 // @require           https://cdn.staticfile.org/spark-md5/3.0.0/spark-md5.min.js
 // @grant             GM_setValue
@@ -80,7 +80,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
         });
         if (dir_list.length) {
             Swal.fire({
-                type: 'info',
+                icon: 'info',
                 title: '选择中包含文件夹, 是否递归生成?',
                 text: '若选是，将同时生成各级子文件夹下的文件',
                 allowOutsideClick: false,
@@ -652,10 +652,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             if (!dir) {
                 dir = '';
             }
+            let match = /path=([^\&.]+)/.exec(document.location);
+            if (match !== null && match.length == 2 && match[1] != "") {
+                dir = decodeURIComponent(match[1]);
+            }
             Swal.fire({
                 title: '请输入保存路径',
                 input: 'text',
-                inputPlaceholder: '格式示例：/GTA5/，默认保存在根目录',
+                inputLabel: '格式示例：/GTA5/，默认保存在根目录',
                 inputValue: dir,
                 showCancelButton: true,
                 confirmButtonText: '确定',
