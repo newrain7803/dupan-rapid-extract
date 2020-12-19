@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.3.5
+// @version           1.3.6
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -14,6 +14,7 @@
 // @grant             GM_deleteValue
 // @grant             GM_setClipboard
 // @grant             GM_xmlhttpRequest
+// @run-at            document-start
 // @connect           *
 // ==/UserScript==
 ! function () {
@@ -766,6 +767,6 @@
         </span></div></div>`;
 
     const href = window.location.href;
-    GetInfo_url();
-    initButtonHome();
+    document.addEventListener('DOMContentLoaded', GetInfo_url);
+    document.addEventListener('DOMContentLoaded', initButtonHome);
 }();
