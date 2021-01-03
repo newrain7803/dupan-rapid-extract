@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.3.6
+// @version           1.3.8
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -21,9 +21,9 @@
     'use strict';
     const api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
     const pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
-    const appid_list = ['250528', '265486', '266719', '778750', '498065', '309847'];
+    const appid_list = ['266719', '265486', '250528', '778750', '498065', '309847'];
     //使用'250528', '265486', '266719'，下载50M以上的文件会报403，黑号情况下部分文件也会报403
-    const bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', , 'b912d5b77babf959865100bf1d0c2a19'];
+    const bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', 'b912d5b77babf959865100bf1d0c2a19'];
     var select_list,
         failed = 0,
         check_mode = false,
@@ -690,9 +690,9 @@
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
             GetInfo(bdlink)
-        } else if (!GM_getValue('1.3.3_no_first')) {
+        } else if (!GM_getValue('1.3.7_no_first')) {
             Swal.fire({
-                title: `秒传链接提取 1.3.3 更新内容(20.12.1):`,
+                title: `秒传链接提取 1.3.7 更新内容(21.1.3):`,
                 html: update_info,
                 heightAuto: false,
                 scrollbarPadding: false,
@@ -700,7 +700,7 @@
                 allowOutsideClick: false,
                 confirmButtonText: '确定'
             }).then((result) => {
-                GM_setValue('1.3.3_no_first', true)
+                GM_setValue('1.3.7_no_first', true)
             });
         }
     }
@@ -714,15 +714,21 @@
         `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
 
+        <p>修复了会员账号生成50M以下文件时提示 "md5获取失败" 的问题</p>
+
+        <p><br></p>
+
+        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+
+        <p><br></p>
+
+        <p>1.3.3 更新内容(20.12.1):</p>
+
         <p>秒传生成完成后点击复制按钮之前都可以继续任务,防止误操作关闭页面导致生成结果丢失</p>
 
         <p>修改代码执行顺序防止秒传按钮出现在最左端</p>
 
         <p>修复了跨域提示中失效的说明图片</p>
-
-        <p><br></p>
-
-        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
 
         <p><br></p>
 

@@ -5,7 +5,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.3.6
+// @version           1.3.8
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -26,9 +26,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
     var api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
     var pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
-    var appid_list = ['250528', '265486', '266719', '778750', '498065', '309847'];
+    var appid_list = ['266719', '265486', '250528', '778750', '498065', '309847'];
     //使用'250528', '265486', '266719'，下载50M以上的文件会报403，黑号情况下部分文件也会报403
-    var bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43',, 'b912d5b77babf959865100bf1d0c2a19'];
+    var bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', 'b912d5b77babf959865100bf1d0c2a19'];
     var select_list,
         failed = 0,
         check_mode = false,
@@ -705,9 +705,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
             GetInfo(bdlink);
-        } else if (!GM_getValue('1.3.3_no_first')) {
+        } else if (!GM_getValue('1.3.7_no_first')) {
             Swal.fire({
-                title: '\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6 1.3.3 \u66F4\u65B0\u5185\u5BB9(20.12.1):',
+                title: '\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6 1.3.7 \u66F4\u65B0\u5185\u5BB9(21.1.3):',
                 html: update_info,
                 heightAuto: false,
                 scrollbarPadding: false,
@@ -715,7 +715,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
                 allowOutsideClick: false,
                 confirmButtonText: '确定'
             }).then(function (result) {
-                GM_setValue('1.3.3_no_first', true);
+                GM_setValue('1.3.7_no_first', true);
             });
         }
     }
@@ -725,7 +725,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
         while (new Date().getTime() < startTime) {}
     };
 
-    var update_info = '<div class="panel-body" style="height: 250px; overflow-y:scroll">\n        <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>\n\n        <p>\u79D2\u4F20\u751F\u6210\u5B8C\u6210\u540E\u70B9\u51FB\u590D\u5236\u6309\u94AE\u4E4B\u524D\u90FD\u53EF\u4EE5\u7EE7\u7EED\u4EFB\u52A1,\u9632\u6B62\u8BEF\u64CD\u4F5C\u5173\u95ED\u9875\u9762\u5BFC\u81F4\u751F\u6210\u7ED3\u679C\u4E22\u5931</p>\n\n        <p>\u4FEE\u6539\u4EE3\u7801\u6267\u884C\u987A\u5E8F\u9632\u6B62\u79D2\u4F20\u6309\u94AE\u51FA\u73B0\u5728\u6700\u5DE6\u7AEF</p>\n\n        <p>\u4FEE\u590D\u4E86\u8DE8\u57DF\u63D0\u793A\u4E2D\u5931\u6548\u7684\u8BF4\u660E\u56FE\u7247</p>\n\n        <p><br></p>\n\n        <p>\u82E5\u51FA\u73B0\u4EFB\u4F55\u95EE\u9898\u8BF7\u524D\u5F80<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork\u9875</a>\u53CD\u9988</p>\n\n        <p><br></p>\n\n        <p>1.2.9 \u66F4\u65B0\u5185\u5BB9(20.11.11):</p>\n        \n        <p>\u751F\u6210\u79D2\u4F20\u7684\u5F39\u7A97\u6DFB\u52A0\u4E86\u5173\u95ED\u6309\u94AE</p>\n        \n        <p>\u5220\u9664\u4E86\u5168\u90E8\u751F\u6210\u5931\u8D25\u65F6\u7684\u590D\u5236\u548C\u6D4B\u8BD5\u6309\u94AE</p>\n\n        <p>\u79D2\u4F20\u751F\u6210\u540E\u52A0\u4E86\u4E00\u4E2A\u5BFC\u51FA\u6587\u4EF6\u8DEF\u5F84\u7684\u9009\u9879(\u9ED8\u8BA4\u4E0D\u5BFC\u51FA)</p>\n\n        <p>\u5728\u8F93\u5165\u4FDD\u5B58\u8DEF\u5F84\u7684\u5F39\u7A97\u6DFB\u52A0\u4E86\u6821\u9A8C\uFF0C\u9632\u6B62\u8F93\u5165\u9519\u8BEF\u8DEF\u5F84</p>\n\n        <p><br></p>\n\n        <p>1.2.5 \u66F4\u65B0\u5185\u5BB9(20.11.4):</p>\n        \n        <p>\u4F18\u5316\u6309\u94AE\u6837\u5F0F\uFF0C\u6DFB\u52A0\u4E86md5\u83B7\u53D6\u5931\u8D25\u7684\u62A5\u9519</p>\n\n        <p>\u4FEE\u590D\u4ECEpan.baidu.com\u8FDB\u5165\u540E\u4E0D\u663E\u793A\u751F\u6210\u6309\u94AE\u7684\u95EE\u9898</p>\n        \n        <p><br></p>\n        \n        <p>1.2.4 \u66F4\u65B0\u5185\u5BB9(20.11.2):</p>\n        \n        <p>\u65B0\u589E\u751F\u6210\u79D2\u4F20:</p>\n        \n        <p>\u9009\u62E9\u6587\u4EF6\u6216\u6587\u4EF6\u5939\u540E\u70B9\u51FB "\u751F\u6210\u79D2\u4F20" \u5373\u53EF\u5F00\u59CB\u751F\u6210</p>\n        \n        <p><br></p>\n        \n        <p>\u7EE7\u7EED\u672A\u5B8C\u6210\u4EFB\u52A1:</p>\n        \n        <p>\u82E5\u751F\u6210\u79D2\u4F20\u671F\u95F4\u5173\u95ED\u4E86\u7F51\u9875, \u518D\u6B21\u70B9\u51FB "\u751F\u6210\u79D2\u4F20" \u5373\u53EF\u7EE7\u7EED\u4EFB\u52A1</p>\n        \n        <p><br></p>\n        \n        <p>\u6D4B\u8BD5\u79D2\u4F20\u529F\u80FD:</p>\n        \n        <p>\u751F\u6210\u5B8C\u6210\u540E, \u70B9\u51FB"\u6D4B\u8BD5"\u6309\u94AE, \u4F1A\u81EA\u52A8\u8F6C\u5B58\u5E76\u8986\u76D6\u6587\u4EF6(\u6587\u4EF6\u5185\u5BB9\u4E0D\u53D8), \u4EE5\u68C0\u6D4B\u79D2\u4F20\u6709\u6548\u6027, \u4EE5\u53CA\u4FEE\u590Dmd5\u9519\u8BEF\u9632\u6B62\u79D2\u4F20\u5931\u6548</p>\n        \n        </span></div></div>';
+    var update_info = '<div class="panel-body" style="height: 250px; overflow-y:scroll">\n        <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>\n\n        <p>\u4FEE\u590D\u4E86\u4F1A\u5458\u8D26\u53F7\u751F\u621050M\u4EE5\u4E0B\u6587\u4EF6\u65F6\u63D0\u793A "md5\u83B7\u53D6\u5931\u8D25" \u7684\u95EE\u9898</p>\n\n        <p><br></p>\n\n        <p>\u82E5\u51FA\u73B0\u4EFB\u4F55\u95EE\u9898\u8BF7\u524D\u5F80<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork\u9875</a>\u53CD\u9988</p>\n\n        <p><br></p>\n\n        <p>1.3.3 \u66F4\u65B0\u5185\u5BB9(20.12.1):</p>\n\n        <p>\u79D2\u4F20\u751F\u6210\u5B8C\u6210\u540E\u70B9\u51FB\u590D\u5236\u6309\u94AE\u4E4B\u524D\u90FD\u53EF\u4EE5\u7EE7\u7EED\u4EFB\u52A1,\u9632\u6B62\u8BEF\u64CD\u4F5C\u5173\u95ED\u9875\u9762\u5BFC\u81F4\u751F\u6210\u7ED3\u679C\u4E22\u5931</p>\n\n        <p>\u4FEE\u6539\u4EE3\u7801\u6267\u884C\u987A\u5E8F\u9632\u6B62\u79D2\u4F20\u6309\u94AE\u51FA\u73B0\u5728\u6700\u5DE6\u7AEF</p>\n\n        <p>\u4FEE\u590D\u4E86\u8DE8\u57DF\u63D0\u793A\u4E2D\u5931\u6548\u7684\u8BF4\u660E\u56FE\u7247</p>\n\n        <p><br></p>\n\n        <p>1.2.9 \u66F4\u65B0\u5185\u5BB9(20.11.11):</p>\n        \n        <p>\u751F\u6210\u79D2\u4F20\u7684\u5F39\u7A97\u6DFB\u52A0\u4E86\u5173\u95ED\u6309\u94AE</p>\n        \n        <p>\u5220\u9664\u4E86\u5168\u90E8\u751F\u6210\u5931\u8D25\u65F6\u7684\u590D\u5236\u548C\u6D4B\u8BD5\u6309\u94AE</p>\n\n        <p>\u79D2\u4F20\u751F\u6210\u540E\u52A0\u4E86\u4E00\u4E2A\u5BFC\u51FA\u6587\u4EF6\u8DEF\u5F84\u7684\u9009\u9879(\u9ED8\u8BA4\u4E0D\u5BFC\u51FA)</p>\n\n        <p>\u5728\u8F93\u5165\u4FDD\u5B58\u8DEF\u5F84\u7684\u5F39\u7A97\u6DFB\u52A0\u4E86\u6821\u9A8C\uFF0C\u9632\u6B62\u8F93\u5165\u9519\u8BEF\u8DEF\u5F84</p>\n\n        <p><br></p>\n\n        <p>1.2.5 \u66F4\u65B0\u5185\u5BB9(20.11.4):</p>\n        \n        <p>\u4F18\u5316\u6309\u94AE\u6837\u5F0F\uFF0C\u6DFB\u52A0\u4E86md5\u83B7\u53D6\u5931\u8D25\u7684\u62A5\u9519</p>\n\n        <p>\u4FEE\u590D\u4ECEpan.baidu.com\u8FDB\u5165\u540E\u4E0D\u663E\u793A\u751F\u6210\u6309\u94AE\u7684\u95EE\u9898</p>\n        \n        <p><br></p>\n        \n        <p>1.2.4 \u66F4\u65B0\u5185\u5BB9(20.11.2):</p>\n        \n        <p>\u65B0\u589E\u751F\u6210\u79D2\u4F20:</p>\n        \n        <p>\u9009\u62E9\u6587\u4EF6\u6216\u6587\u4EF6\u5939\u540E\u70B9\u51FB "\u751F\u6210\u79D2\u4F20" \u5373\u53EF\u5F00\u59CB\u751F\u6210</p>\n        \n        <p><br></p>\n        \n        <p>\u7EE7\u7EED\u672A\u5B8C\u6210\u4EFB\u52A1:</p>\n        \n        <p>\u82E5\u751F\u6210\u79D2\u4F20\u671F\u95F4\u5173\u95ED\u4E86\u7F51\u9875, \u518D\u6B21\u70B9\u51FB "\u751F\u6210\u79D2\u4F20" \u5373\u53EF\u7EE7\u7EED\u4EFB\u52A1</p>\n        \n        <p><br></p>\n        \n        <p>\u6D4B\u8BD5\u79D2\u4F20\u529F\u80FD:</p>\n        \n        <p>\u751F\u6210\u5B8C\u6210\u540E, \u70B9\u51FB"\u6D4B\u8BD5"\u6309\u94AE, \u4F1A\u81EA\u52A8\u8F6C\u5B58\u5E76\u8986\u76D6\u6587\u4EF6(\u6587\u4EF6\u5185\u5BB9\u4E0D\u53D8), \u4EE5\u68C0\u6D4B\u79D2\u4F20\u6709\u6548\u6027, \u4EE5\u53CA\u4FEE\u590Dmd5\u9519\u8BEF\u9632\u6B62\u79D2\u4F20\u5931\u6548</p>\n        \n        </span></div></div>';
 
     var href = window.location.href;
     document.addEventListener('DOMContentLoaded', GetInfo_url);
