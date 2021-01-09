@@ -5,7 +5,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.3.8
+// @version           1.3.9
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -18,7 +18,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 // @grant             GM_deleteValue
 // @grant             GM_setClipboard
 // @grant             GM_xmlhttpRequest
-// @run-at            document-start
+// @run-at            document-body
 // @connect           *
 // ==/UserScript==
 !function () {
@@ -595,7 +595,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             case 404:
                 return '文件不存在(秒传无效)';
             case 2:
-                return '转存失败(请重新登录网盘账号)';
+                return '转存失败(链接内的文件路径错误/文件超20G/尝试重新登录网盘账号)';
             case -10:
                 return '网盘容量已满';
             case 114514:
