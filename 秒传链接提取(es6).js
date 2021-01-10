@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.3.9
+// @version           1.4.2
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -132,7 +132,7 @@
                     title: '首次使用请注意',
                     showCloseButton: true,
                     allowOutsideClick: false,
-                    html: '<p>弹出跨域访问窗口时, 请选择 "总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/e7aead321068c0a9a922bf8061338256.jpeg">'
+                    html: '<p>弹出跨域访问窗口时,请选择 "总是允许" 或 "总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/763ff5014cca49237cb3ede92b5b7ac5.png">'
                 }).then((result) => {
                     if (result.value) {
                         GM_setValue('gen_no_first_1.3.3', true);
@@ -173,6 +173,17 @@
     };
 
     function initButtonHome() {
+        let loop = setInterval(() => {
+            var html_tag = $("div.tcuLAu");
+            if (!html_tag.length) return false;
+            sleep(200);
+            html_tag.append(html_btn);
+            $("#bdlink_btn").click(function () {
+                GetInfo();
+            });
+            clearInterval(loop);
+        }, 500);
+
         var listTools = getSystemContext().Broker.getButtonBroker("listTools");
         if (listTools && listTools.$box) {
             $(listTools.$box).children('div').after(html_btn_gen);
@@ -226,7 +237,7 @@
             file_info_list.forEach(function (item) {
                 if (item.hasOwnProperty('errno')) {
                     gen_failed++;
-                    failed_info += `<p>文件：${item.path}</p><p>失败原因：${checkErrno(item.errno)}(#${item.errno})</p>`
+                    failed_info += `<p>文件：${item.path}</p><p>失败原因：${checkErrno(item.errno, item.size)}(#${item.errno})</p>`
                 } else {
                     gen_success_list.push(item);
                     bdcode += `${item.md5}#${item.md5s}#${item.size}#${item.path}\n`;
@@ -270,6 +281,11 @@
         }
         var file_info = file_info_list[file_id];
         if (file_info.hasOwnProperty('errno')) {
+            myGenerater(file_id + 1);
+            return;
+        }
+        if (file_info.size > 21474836480){
+            file_info.errno = 3939;
             myGenerater(file_id + 1);
             return;
         }
@@ -490,8 +506,11 @@
                     codeInfo.forEach(function (item) {
                         if (item.hasOwnProperty('errno')) {
                             var file_name = item.path;
-                            var errText = checkErrno(item.errno);
-                            var str1 = `文件名：${file_name}`;
+                            if (item.errno === 2 && item.size > 21474836480){
+                                item.errno = 3939;
+                            }
+                            var errText = checkErrno(item.errno, item.size);
+                            var str1 = `文件：${file_name}`;
                             var str2 = `失败原因：${errText}(#${item.errno})`;
                             var ele1 = document.createElement('p');
                             var ele2 = document.createElement('p');
@@ -539,6 +558,11 @@
         var first_404 = false;
         var file = codeInfo[i];
         file_num.textContent = (i + 1).toString() + ' / ' + codeInfo.length.toString();
+        if (file.path.match(/['"\\\:*?<>|]/)) {
+            codeInfo[i].errno = 2333;
+            saveFile(i + 1, false);
+            return;
+        }
         $.ajax({
             url: `/api/rapidupload${check_mode?'?rtype=3':''}`,
             type: 'POST',
@@ -573,20 +597,28 @@
         });
     }
 
-    function checkErrno(errno) {
+    function checkErrno(errno, file_size=0) {
         switch (errno) {
             case -8:
                 return '文件已存在';
+            case 400:
+                return '请求错误(请尝试使用最新版Chrome浏览器)';
             case 403:
-                return '文件获取失败';
+                return '文件获取失败(生成过于频繁导致接口被限,请明天再试)';
             case 404:
                 return '文件不存在(秒传无效)';
             case 2:
-                return '转存失败(链接内的文件路径错误/文件超20G/尝试重新登录网盘账号)';
+                return '转存失败(尝试重新登录网盘账号)';
+            case 3939:
+                return `秒传不支持大于20G的文件,文件大小:${(file_size/(1024**3)).toFixed(2)}G`;
+                //文件大于20G时访问秒传接口实际会返回#2
+            case 2333:
+                return '链接内的文件路径错误(不能含有以下字符\'"\\:*?<>|)';
+                //文件路径错误时接口实际也是返回#2
             case -10:
                 return '网盘容量已满';
             case 114514:
-                return '接口调用失败(请重试)';
+                return '接口调用失败(请重试/弹出跨域访问窗口时,请选择 "总是允许" 或 "总是允许全部域名")';
             case 1919:
                 return '文件已被和谐';
             case 810:
@@ -677,16 +709,6 @@
     function GetInfo_url() {
         var bdlink = href.match(/[\?#]bdlink=([\da-zA-Z/\+]+)&?/);
 
-        let loop = setInterval(() => {
-            var html_tag = $("div.tcuLAu");
-            if (!html_tag.length) return false;
-            html_tag.append(html_btn);
-            $("#bdlink_btn").click(function () {
-                GetInfo();
-            });
-            clearInterval(loop);
-        }, 500);
-
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
             GetInfo(bdlink)
@@ -709,6 +731,11 @@
         var startTime = new Date().getTime() + parseInt(time, 10);
         while (new Date().getTime() < startTime) {}
     };
+
+    function myInit() {
+        GetInfo_url();
+        initButtonHome();
+    }
 
     const update_info =
         `<div class="panel-body" style="height: 250px; overflow-y:scroll">
@@ -773,6 +800,5 @@
         </span></div></div>`;
 
     const href = window.location.href;
-    document.addEventListener('DOMContentLoaded', GetInfo_url);
-    document.addEventListener('DOMContentLoaded', initButtonHome);
+    document.addEventListener('DOMContentLoaded', myInit);
 }();
