@@ -5,7 +5,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.2
+// @version           1.4.4
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -43,9 +43,13 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
         recursive,
         bdcode,
         xmlhttpRequest;
+    var myStyle = 'style="width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;"';
+    var myBtnStyle = 'style="height: 26px;line-height: 26px;vertical-align: middle;"';
     var html_btn = '<a class="g-button g-button-blue href="javascript:;" id="bdlink_btn" title="\u79D2\u4F20\u94FE\u63A5" style="display: inline-block;"">\n    <span class="g-button-right"><em class="icon icon-disk" title="\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6"></em><span class="text" style="width: auto;">\u79D2\u4F20\u94FE\u63A5</span></span></a>';
     var html_btn_gen = '<a class="g-button gen-bdlink-button"><span class="g-button-right"><em class="icon icon-share" title="\u751F\u6210\u79D2\u4F20">\n    </em><span class="text">\u751F\u6210\u79D2\u4F20</span></span></a>';
-    var html_check_md5 = '<p style="width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;">\u6D4B\u8BD5\u79D2\u4F20, \u53EF\u9632\u6B62\u79D2\u4F20\u5931\u6548\n    <a class="g-button g-button-blue" id="check_md5_btn"><span class="g-button-right"><span class="text" style="width: auto;">\u6D4B\u8BD5</span>\n    </span></a></p><p>\u6CE8\u610F: \u6D4B\u8BD5\u79D2\u4F20\u4F1A\u8F6C\u5B58\u5E76\u8986\u76D6\u6587\u4EF6,\u82E5\u5728\u751F\u6210\u671F\u95F4\u4FEE\u6539\u8FC7\u540C\u540D\u6587\u4EF6,\u4E3A\u907F\u514D\u4FEE\u6539\u7684\u6587\u4EF6\u4E22\u5931,\u8BF7\u4E0D\u8981\u4F7F\u7528\u6B64\u529F\u80FD!</p>';
+    var html_check_md5 = '<p ' + myStyle + '>\u6D4B\u8BD5\u79D2\u4F20, \u53EF\u9632\u6B62\u79D2\u4F20\u5931\u6548\n    <a class="g-button g-button-blue" id="check_md5_btn"><span class="g-button-right"><span class="text" style="width: auto;">\u6D4B\u8BD5</span>\n    </span></a></p><p>\u6CE8\u610F: \u6D4B\u8BD5\u79D2\u4F20\u4F1A\u8F6C\u5B58\u5E76\u8986\u76D6\u6587\u4EF6,\u82E5\u5728\u751F\u6210\u671F\u95F4\u4FEE\u6539\u8FC7\u540C\u540D\u6587\u4EF6,\u4E3A\u907F\u514D\u4FEE\u6539\u7684\u6587\u4EF6\u4E22\u5931,\u8BF7\u4E0D\u8981\u4F7F\u7528\u6B64\u529F\u80FD!</p>';
+    var html_donate = '<p id="bdcode_donate" ' + myStyle + '>\u82E5\u559C\u6B22\u8BE5\u811A\u672C, \u53EF\u524D\u5F80 <a href="https://afdian.net/@mengzonefire" rel="noopener noreferrer" target="_blank">\u8D5E\u52A9\u9875</a> \u652F\u6301\u4F5C\u8005\n    <a class="g-button" id="kill_donate" ' + myBtnStyle + '><span class="g-button-right" ' + myBtnStyle + '><span class="text" style="width: auto;">\u4E0D\u518D\u663E\u793A</span></span></a></p>';
+    var html_feedback = '<p id="bdcode_feedback" ' + myStyle + '>\u82E5\u811A\u672C\u4F7F\u7528\u6709\u4EFB\u4F55\u95EE\u9898, \u53EF\u524D\u5F80 <a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">\u811A\u672C\u9875</a> \u53CD\u9988\n    <a class="g-button" id="kill_feedback" ' + myBtnStyle + '><span class="g-button-right" ' + myBtnStyle + '><span class="text" style="width: auto;">\u4E0D\u518D\u663E\u793A</span></span></a></p>';
     var checkbox_par = {
         input: 'checkbox',
         inputValue: GM_getValue('with_path'),
@@ -126,7 +130,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             onerror: function onerror(r) {
                 file_info_list.push({
                     'path': path,
-                    'errno': 114514
+                    'errno': 514
                 });
                 add_dir_list(dir_list, dir_id + 1);
             }
@@ -141,7 +145,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
                     title: '首次使用请注意',
                     showCloseButton: true,
                     allowOutsideClick: false,
-                    html: '<p>弹出跨域访问窗口时,请选择 "总是允许" 或 "总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/763ff5014cca49237cb3ede92b5b7ac5.png">'
+                    html: '<p>弹出跨域访问窗口时,请选择"总是允许"或"总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/763ff5014cca49237cb3ede92b5b7ac5.png">'
                 }).then(function (result) {
                     if (result.value) {
                         GM_setValue('gen_no_first_1.3.3', true);
@@ -272,16 +276,23 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
                 html: bdcode ? html_check_md5 + (failed_info && '<p><br></p>' + failed_info) : failed_info
             }, bdcode && checkbox_par, {
                 onBeforeOpen: function onBeforeOpen() {
-                    $("#check_md5_btn").click(function () {
-                        codeInfo = gen_success_list;
-                        check_mode = true;
-                        Process();
-                    });
+                    var loop = setInterval(function () {
+                        var html_tag = $("#check_md5_btn");
+                        if (!html_tag.length) return false;
+                        $("#check_md5_btn").click(function () {
+                            codeInfo = gen_success_list;
+                            check_mode = true;
+                            Process();
+                        });
+                        clearInterval(loop);
+                    }, 50);
+                    var content = Swal.getContent();
+                    Add_content(content);
                 }
             })).then(function (result) {
                 if (!result.dismiss) {
                     if (!result.value) {
-                        bdcode = bdcode.replace(/\/.+\//g, '');
+                        bdcode = bdcode.replace(/(\/.+\/)|(\/)/g, '');
                     }
                     checkbox_par.inputValue = result.value;
                     GM_setValue('with_path', result.value);
@@ -325,7 +336,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
                 console.log("timeout !!!");
             },
             onerror: function onerror(r) {
-                file_info.errno = 114514;
+                file_info.errno = 514;
                 myGenerater(file_id + 1);
             },
             onload: function onload(r) {
@@ -536,6 +547,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
                             content.appendChild(ele2);
                         }
                     });
+                    Add_content(content);
                     var _dir = (dir || '').replace(/\/$/, '');
                     if (_dir) {
                         var cBtn = Swal.getConfirmButton();
@@ -598,7 +610,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
                 }
             }
         }).fail(function (r) {
-            codeInfo[i].errno = 114514;
+            codeInfo[i].errno = 114;
             failed++;
         }).always(function () {
             if (!try_flag && first_404) {
@@ -619,7 +631,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             case 400:
                 return '请求错误(请尝试使用最新版Chrome浏览器)';
             case 403:
-                return '文件获取失败(生成过于频繁导致接口被限,请明天再试)';
+                return '文件获取失败(生成过于频繁导致接口被限,请稍后再试)';
             case 404:
                 return '文件不存在(秒传无效)';
             case 2:
@@ -632,8 +644,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             //文件路径错误时接口实际也是返回#2
             case -10:
                 return '网盘容量已满';
-            case 114514:
-                return '接口调用失败(请重试/弹出跨域访问窗口时,请选择 "总是允许" 或 "总是允许全部域名")';
+            case 114:
+                return '接口调用失败(请重试)';
+            case 514:
+                return '接口调用失败(请重试/弹出跨域访问窗口时,请选择"总是允许"或"总是允许全部域名")';
             case 1919:
                 return '文件已被和谐';
             case 810:
@@ -741,6 +755,39 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
             }).then(function (result) {
                 GM_setValue('1.3.7_no_first', true);
             });
+        }
+    }
+
+    function Add_content(content) {
+        var hasAdd = false;
+        if (!GM_getValue('kill_feedback')) {
+            hasAdd = true;
+            content.innerHTML += '<p><br></p>';
+            content.innerHTML += html_feedback;
+            var loop = setInterval(function () {
+                var html_tag = $("#kill_feedback");
+                if (!html_tag.length) return false;
+                $("#kill_feedback").click(function () {
+                    GM_setValue('kill_feedback', true);
+                    $("#bdcode_feedback").remove();
+                });
+                clearInterval(loop);
+            }, 50);
+        }
+        if (!GM_getValue('kill_donate')) {
+            if (!hasAdd) {
+                content.innerHTML += '<p><br></p>';
+            }
+            content.innerHTML += html_donate;
+            var _loop = setInterval(function () {
+                var html_tag = $("#kill_donate");
+                if (!html_tag.length) return false;
+                $("#kill_donate").click(function () {
+                    GM_setValue('kill_donate', true);
+                    $("#bdcode_donate").remove();
+                });
+                clearInterval(_loop);
+            }, 50);
         }
     }
 
