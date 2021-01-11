@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.4
+// @version           1.4.5
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -14,6 +14,7 @@
 // @grant             GM_deleteValue
 // @grant             GM_setClipboard
 // @grant             GM_xmlhttpRequest
+// @grant             GM_info
 // @run-at            document-body
 // @connect           *
 // ==/UserScript==
@@ -41,7 +42,7 @@
     </span></a></p><p>注意: 测试秒传会转存并覆盖文件,若在生成期间修改过同名文件,为避免修改的文件丢失,请不要使用此功能!</p>`;
     const html_donate = `<p id="bdcode_donate" ${myStyle}>若喜欢该脚本, 可前往 <a href="https://afdian.net/@mengzonefire" rel="noopener noreferrer" target="_blank">赞助页</a> 支持作者
     <a class="g-button" id="kill_donate" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">不再显示</span></span></a></p>`;
-    const html_feedback = `<p id="bdcode_feedback" ${myStyle}>若脚本使用有任何问题, 可前往 <a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">脚本页</a> 反馈
+    const html_feedback = `<p id="bdcode_feedback" ${myStyle}>若脚本使用有任何问题, 可前往 <a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">脚本页</a> 反馈
     <a class="g-button" id="kill_feedback" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">不再显示</span></span></a></p>`;
     var checkbox_par = {
         input: 'checkbox',
@@ -182,20 +183,26 @@
         let loop = setInterval(() => {
             var html_tag = $("div.tcuLAu");
             if (!html_tag.length) return false;
-            sleep(200);
             html_tag.append(html_btn);
-            $("#bdlink_btn").click(function () {
-                GetInfo();
-            });
+            let loop2 = setInterval(() => {
+                var btn_tag = $("#bdlink_btn");
+                if (!btn_tag.length) return false;
+                btn_tag.click(function () {
+                    GetInfo();
+                });
+                clearInterval(loop2);
+            }, 50);
             clearInterval(loop);
         }, 500);
+    }
 
+    function initButtonGen() {
         var listTools = getSystemContext().Broker.getButtonBroker("listTools");
         if (listTools && listTools.$box) {
             $(listTools.$box).children('div').after(html_btn_gen);
             initButtonEvent();
         } else {
-            setTimeout(initButtonHome, 500);
+            setTimeout(initButtonGen, 500);
         }
     };
 
@@ -728,9 +735,9 @@
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
             GetInfo(bdlink)
-        } else if (!GM_getValue('1.3.7_no_first')) {
+        } else if (!GM_getValue('1.4.5_no_first')) {
             Swal.fire({
-                title: `秒传链接提取 1.3.7 更新内容(21.1.3):`,
+                title: `秒传链接提取 1.4.5 更新内容(21.1.12):`,
                 html: update_info,
                 heightAuto: false,
                 scrollbarPadding: false,
@@ -738,7 +745,7 @@
                 allowOutsideClick: false,
                 confirmButtonText: '确定'
             }).then((result) => {
-                GM_setValue('1.3.7_no_first', true)
+                GM_setValue('1.4.5_no_first', true)
             });
         }
     }
@@ -784,17 +791,37 @@
     function myInit() {
         GetInfo_url();
         initButtonHome();
+        initButtonGen();
+    }
+
+    function check_compa() {
+        if (GM_info.scriptHandler==='Violentmonkey'){
+            if(!GM_getValue('check_compa'))
+            var mymessage=confirm('\"秒传链接提取\" 脚本在 \"暴力猴Violentmonkey\" 插件下可能无法正常运行\n建议更换为 \"油猴Tampermonkey\" 插件, 请问是否继续?');
+            if (mymessage){
+                GM_setValue('check_compa', true)
+                document.addEventListener('DOMContentLoaded', myInit);
+            }
+        }else{
+            document.addEventListener('DOMContentLoaded', myInit);
+        }  
     }
 
     const update_info =
         `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
 
-        <p>修复了会员账号生成50M以下文件时提示 "md5获取失败" 的问题</p>
+        <p>修复了1.4.0后可能出现的秒传按钮无效、显示多个秒传按钮的问题</p>
 
         <p><br></p>
 
-        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324/feedback" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+
+        <p><br></p>
+
+        <p>1.3.7 更新内容(21.1.3):</p>
+
+        <p>修复了会员账号生成50M以下文件时提示 "md5获取失败" 的问题</p>
 
         <p><br></p>
 
@@ -849,5 +876,5 @@
         </span></div></div>`;
 
     const href = window.location.href;
-    document.addEventListener('DOMContentLoaded', myInit);
+    check_compa();
 }();
