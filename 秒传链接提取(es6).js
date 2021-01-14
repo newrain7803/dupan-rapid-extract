@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.5
+// @version           1.4.6
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -20,6 +20,7 @@
 // ==/UserScript==
 ! function () {
     'use strict';
+    const info_url = 'https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo'
     const api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
     const pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
     const appid_list = ['266719', '265486', '250528', '778750', '498065', '309847'];
@@ -27,19 +28,20 @@
     const bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', 'b912d5b77babf959865100bf1d0c2a19'];
     var select_list,
         failed = 0,
+        vip_type = 0,
+        interval = 0,
         check_mode = false,
+        interval_mode = false,
         file_info_list = [],
         gen_success_list = [],
-        dir, file_num, gen_num, gen_prog, list_path, codeInfo, recursive, bdcode, xmlhttpRequest;
+        dir, file_num, gen_num, gen_prog, codeInfo, recursive, bdcode, xmlhttpRequest;
     const myStyle = `style="width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;"`;
     const myBtnStyle = `style="height: 26px;line-height: 26px;vertical-align: middle;"`;
     const html_btn = `<a class="g-button g-button-blue href="javascript:;" id="bdlink_btn" title="秒传链接" style="display: inline-block;"">
     <span class="g-button-right"><em class="icon icon-disk" title="秒传链接提取"></em><span class="text" style="width: auto;">秒传链接</span></span></a>`;
-    const html_btn_gen = `<a class="g-button gen-bdlink-button"><span class="g-button-right"><em class="icon icon-share" title="生成秒传">
-    </em><span class="text">生成秒传</span></span></a>`;
-    const html_check_md5 = `<p ${myStyle}>测试秒传, 可防止秒传失效
-    <a class="g-button g-button-blue" id="check_md5_btn"><span class="g-button-right"><span class="text" style="width: auto;">测试</span>
-    </span></a></p><p>注意: 测试秒传会转存并覆盖文件,若在生成期间修改过同名文件,为避免修改的文件丢失,请不要使用此功能!</p>`;
+    const html_btn_gen = `<a class="g-button gen-bdlink-button"><span class="g-button-right"><em class="icon icon-share" title="生成秒传"></em><span class="text">生成秒传</span></span></a>`;
+    const html_check_md5 = `<p ${myStyle}>测试秒传, 可防止秒传失效<a class="g-button g-button-blue" id="check_md5_btn" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">测试</span></span></a></p>`;
+    const html_document = `<p ${myStyle}>分享过程中遇到问题可参考<a class="g-button g-button-blue" ${myBtnStyle} href="https://shimo.im/docs/TZ1JJuEjOM0wnFDH" rel="noopener noreferrer" target="_blank"><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">防爆教程</span></span></a></p>`;
     const html_donate = `<p id="bdcode_donate" ${myStyle}>若喜欢该脚本, 可前往 <a href="https://afdian.net/@mengzonefire" rel="noopener noreferrer" target="_blank">赞助页</a> 支持作者
     <a class="g-button" id="kill_donate" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">不再显示</span></span></a></p>`;
     const html_feedback = `<p id="bdcode_feedback" ${myStyle}>若脚本使用有任何问题, 可前往 <a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">脚本页</a> 反馈
@@ -211,6 +213,10 @@
     };
 
     function Gen_bdlink(file_id = 0) {
+        if (file_info_list.length > 10 && vip_type === 2 && !interval_mode) {
+            Set_interval(file_id);
+            return;
+        }
         Swal.fire({
             title: '秒传生成中',
             showCloseButton: true,
@@ -229,14 +235,74 @@
             if (result.dismiss && xmlhttpRequest) {
                 xmlhttpRequest.abort();
                 GM_deleteValue('unfinish');
+                interval_mode = false;
                 file_info_list = [];
             }
+        });
+    }
+
+    function Set_interval(file_id) {
+        var test_par = /\d+/;
+        interval = GM_getValue('interval') || 15;
+        Swal.fire({
+            title: '批量生成注意',
+            text: '检测到超会账号且生成的文件较多, 会因为生成过快导致接口被限制(#403), 请输入生成间隔(1-30秒,推荐15)防止上述情况',
+            input: 'text',
+            inputValue: interval,
+            showCancelButton: false,
+            allowOutsideClick: false,
+            confirmButtonText: '确定',
+            inputValidator: (value) => {
+                if (!value) {
+                    return '不能为空';
+                }
+                if (!test_par.test(value)) {
+                    return '输入格式不正确, 请输入数字';
+                }
+                if (Number(value) > 30 || Number(value) < 1) {
+                    return '输入应在1-30之间';
+                }
+            }
+        }).then((result) => {
+            interval = Number(result.value);
+            GM_setValue('interval', interval);
+            interval_mode = true;
+            Gen_bdlink(file_id);
         });
     }
 
     var show_prog = function (r) {
         gen_prog.textContent = `${parseInt((r.loaded/r.total)*100)}%`;
     };
+
+    function test_bdlink() {
+        if (!GM_getValue('show_test_warning')) {
+            Swal.fire({
+                title: '注意',
+                text: '测试秒传会转存并覆盖文件,若在生成期间修改过同名文件,为避免修改的文件丢失,请不要使用此功能!',
+                input: 'checkbox',
+                inputPlaceholder: '不再显示',
+                showCancelButton: true,
+                allowOutsideClick: false,
+                confirmButtonText: '确定',
+                cancelButtonText: '返回'
+            }).then((result) => {
+                GM_setValue('show_test_warning', result.value)
+                if (!result.dismiss) {
+                    codeInfo = gen_success_list;
+                    check_mode = true;
+                    Process();
+                } else {
+                    gen_success_list = [];
+                    myGenerater(file_info_list.length);
+                }
+            });
+        } else {
+            codeInfo = gen_success_list;
+            check_mode = true;
+            Process();
+        }
+    }
 
     function myGenerater(file_id, appid_id = 0, failed = false) {
         GM_setValue('unfinish', {
@@ -268,21 +334,18 @@
                 showCancelButton: !bdcode,
                 showConfirmButton: bdcode,
                 allowOutsideClick: false,
-                html: bdcode ? (html_check_md5 + (failed_info && ('<p><br></p>' + failed_info))) : failed_info,
+                html: bdcode ? (html_check_md5 + html_document + (failed_info && ('<p><br></p>' + failed_info))) : failed_info,
                 ...(bdcode && checkbox_par),
                 onBeforeOpen: () => {
                     let loop = setInterval(() => {
                         var html_tag = $("#check_md5_btn");
                         if (!html_tag.length) return false;
                         $("#check_md5_btn").click(function () {
-                            codeInfo = gen_success_list;
-                            check_mode = true;
-                            Process();
+                            test_bdlink();
                         });
                         clearInterval(loop);
                     }, 50);
-                    var content = Swal.getContent();
-                    Add_content(content);
+                    Add_content(Swal.getContent());
                 }
             }).then((result) => {
                 if (!result.dismiss) {
@@ -296,6 +359,7 @@
                 file_info_list = [];
                 gen_success_list = [];
                 GM_deleteValue('unfinish');
+                interval_mode = false;
             });
             return;
         }
@@ -304,7 +368,7 @@
             myGenerater(file_id + 1);
             return;
         }
-        if (file_info.size > 21474836480){
+        if (file_info.size > 21474836480) {
             file_info.errno = 3939;
             myGenerater(file_id + 1);
             return;
@@ -354,9 +418,11 @@
                         var slice_md5 = spark.end();
                         file_info.md5 = file_md5;
                         file_info.md5s = slice_md5;
-                        sleep(1000);
                     }
-                    myGenerater(file_id + 1);
+                    gen_prog.textContent = "100%";
+                    setTimeout(function () {
+                        myGenerater(file_id + 1);
+                    }, interval_mode ? interval * 1000 : 1000);
                 } else {
                     console.log(`use appid: ${appid_list[appid_id]}`);
                     if (r.status == 403 && appid_id < (appid_list.length - 1)) {
@@ -526,7 +592,7 @@
                     codeInfo.forEach(function (item) {
                         if (item.hasOwnProperty('errno')) {
                             var file_name = item.path;
-                            if (item.errno === 2 && item.size > 21474836480){
+                            if (item.errno === 2 && item.size > 21474836480) {
                                 item.errno = 3939;
                             }
                             var errText = checkErrno(item.errno, item.size);
@@ -555,7 +621,6 @@
                         }
                         cBtn.before(btn);
                     }
-
                 }
             }).then((result) => {
                 if (check_mode) {
@@ -569,6 +634,8 @@
                     }
                     file_info_list = [];
                     gen_success_list = [];
+                    GM_deleteValue('unfinish');
+                    interval_mode = false;
                     check_mode = false;
                 }
                 require('system-core:system/baseService/message/message.js').trigger('system-refresh');
@@ -618,7 +685,7 @@
         });
     }
 
-    function checkErrno(errno, file_size=0) {
+    function checkErrno(errno, file_size = 0) {
         switch (errno) {
             case -8:
                 return '文件已存在';
@@ -735,9 +802,9 @@
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
             GetInfo(bdlink)
-        } else if (!GM_getValue('1.4.5_no_first')) {
+        } else if (!GM_getValue('1.4.6_no_first')) {
             Swal.fire({
-                title: `秒传链接提取 1.4.5 更新内容(21.1.12):`,
+                title: `秒传链接提取 1.4.6 更新内容(21.1.14):`,
                 html: update_info,
                 heightAuto: false,
                 scrollbarPadding: false,
@@ -745,14 +812,14 @@
                 allowOutsideClick: false,
                 confirmButtonText: '确定'
             }).then((result) => {
-                GM_setValue('1.4.5_no_first', true)
+                GM_setValue('1.4.6_no_first', true)
             });
         }
     }
 
     function Add_content(content) {
         var hasAdd = false;
-        if(!GM_getValue('kill_feedback')){
+        if (!GM_getValue('kill_feedback')) {
             hasAdd = true;
             content.innerHTML += `<p><br></p>`;
             content.innerHTML += html_feedback;
@@ -766,8 +833,8 @@
                 clearInterval(loop);
             }, 50);
         }
-        if(!GM_getValue('kill_donate')){
-            if(!hasAdd){
+        if (!GM_getValue('kill_donate')) {
+            if (!hasAdd) {
                 content.innerHTML += `<p><br></p>`;
             }
             content.innerHTML += html_donate;
@@ -783,39 +850,59 @@
         }
     }
 
-    function sleep(time) {
-        var startTime = new Date().getTime() + parseInt(time, 10);
-        while (new Date().getTime() < startTime) {}
-    };
+    function checkVipType() {
+        var info_par = {
+            url: info_url,
+            type: 'GET',
+            responseType: 'json',
+            onload: function (r) {
+                if (r.response.hasOwnProperty('vip_type')) {
+                    vip_type = r.response.vip_type;
+                }
+            }
+        };
+        GM_xmlhttpRequest(info_par);
+    }
 
     function myInit() {
         GetInfo_url();
         initButtonHome();
         initButtonGen();
+        checkVipType();
     }
 
     function check_compa() {
-        if (GM_info.scriptHandler==='Violentmonkey'){
-            if(!GM_getValue('check_compa'))
-            var mymessage=confirm('\"秒传链接提取\" 脚本在 \"暴力猴Violentmonkey\" 插件下可能无法正常运行\n建议更换为 \"油猴Tampermonkey\" 插件, 请问是否继续?');
-            if (mymessage){
+        if (GM_info.scriptHandler === 'Violentmonkey') {
+            if (!GM_getValue('check_compa'))
+                var mymessage = confirm('\"秒传链接提取\" 脚本在 \"暴力猴Violentmonkey\" 插件下可能无法正常运行\n建议更换为 \"油猴Tampermonkey\" 插件, 请问是否继续?');
+            if (mymessage) {
                 GM_setValue('check_compa', true)
                 document.addEventListener('DOMContentLoaded', myInit);
             }
-        }else{
+        } else {
             document.addEventListener('DOMContentLoaded', myInit);
-        }  
+        }
     }
 
     const update_info =
         `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
 
-        <p>修复了1.4.0后可能出现的秒传按钮无效、显示多个秒传按钮的问题</p>
+        <p>本次更新针对生成功能做了优化:</p>
+
+        <p>1. 使用超会账号进行10个以上的批量秒传生成时, 会弹窗提示设置生成间隔, 防止生成过快导致接口被限制(#403)</p>
+
+        <p>2. 为秒传分享者提供了一份<a href="https://shimo.im/docs/TZ1JJuEjOM0wnFDH" rel="noopener noreferrer" target="_blank">防爆教程</a>用于参考</p>
 
         <p><br></p>
 
         <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+
+        <p><br></p>
+
+        <p>1.4.5 更新内容(21.1.12)</p>
+
+        <p>修复了1.4.0后可能出现的秒传按钮无效、显示多个秒传按钮的问题</p>
 
         <p><br></p>
 
