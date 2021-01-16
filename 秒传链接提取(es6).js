@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.6
+// @version           1.4.7
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -345,7 +345,7 @@
                         });
                         clearInterval(loop);
                     }, 50);
-                    Add_content(Swal.getContent());
+                    Add_content(document.createElement('div'));
                 }
             }).then((result) => {
                 if (!result.dismiss) {
@@ -608,7 +608,7 @@
                             content.appendChild(ele2);
                         }
                     });
-                    Add_content(content);
+                    Add_content(document.createElement('div'));
                     const _dir = (dir || '').replace(/\/$/, '');
                     if (_dir) {
                         const cBtn = Swal.getConfirmButton();
@@ -848,6 +848,7 @@
                 clearInterval(loop);
             }, 50);
         }
+        Swal.getContent().appendChild(content);
     }
 
     function checkVipType() {
