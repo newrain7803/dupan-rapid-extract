@@ -9,7 +9,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.7
+// @version           1.4.8
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -371,7 +371,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         showCancelButton: !bdcode,
         showConfirmButton: bdcode,
         allowOutsideClick: false,
-        html: bdcode ? html_check_md5 + html_document + (failed_info && '<p><br></p>' + failed_info) : failed_info
+        html: bdcode ? html_check_md5 + html_document + (failed_info && '<p><br></p>' + failed_info) : html_document + '<p><br></p>' + failed_info
       }, bdcode && checkbox_par), {}, {
         onBeforeOpen: function onBeforeOpen() {
           var loop = setInterval(function () {
@@ -725,13 +725,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     var first_404 = false;
     var file = codeInfo[i];
     file_num.textContent = (i + 1).toString() + ' / ' + codeInfo.length.toString();
-
-    if (file.path.match(/['"\\\:*?<>|]/)) {
-      codeInfo[i].errno = 2333;
-      saveFile(i + 1, false);
-      return;
-    }
-
     $.ajax({
       url: "/api/rapidupload".concat(check_mode ? '?rtype=3' : ''),
       type: 'POST',
@@ -747,7 +740,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           codeInfo[i].errno = 404;
           failed++;
         } else if (r.errno !== 404) {
-          codeInfo[i].errno = r.errno;
+          if (file.path.match(/["\\\:*?<>|]/)) {
+            codeInfo[i].errno = 2333;
+          } else {
+            codeInfo[i].errno = r.errno;
+          }
+
           failed++;
         } else {
           first_404 = true;
@@ -790,7 +788,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       //文件大于20G时访问秒传接口实际会返回#2
 
       case 2333:
-        return '链接内的文件路径错误(不能含有以下字符\'"\\:*?<>|)';
+        return '链接内的文件路径错误(不能含有以下字符"\\:*?<>|)';
       //文件路径错误时接口实际也是返回#2
 
       case -10:
@@ -864,8 +862,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputValidator: function inputValidator(value) {
-          if (value.match(/['"\\\:*?<>|]/)) {
-            return '路径中不能含有以下字符\'"\\:*?<>|，格式示例：/GTA5/';
+          if (value.match(/["\\\:*?<>|]/)) {
+            return '路径中不能含有以下字符"\\:*?<>|，格式示例：/GTA5/';
           }
         }
       }).then(function (result) {
