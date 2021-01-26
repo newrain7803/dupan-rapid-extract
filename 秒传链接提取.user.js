@@ -39,21 +39,21 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
   var bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', 'b912d5b77babf959865100bf1d0c2a19'];
   var select_list,
-    failed = 0,
-    vip_type = 0,
-    interval = 0,
-    check_mode = false,
-    interval_mode = false,
-    file_info_list = [],
-    gen_success_list = [],
-    dir,
-    file_num,
-    gen_num,
-    gen_prog,
-    codeInfo,
-    recursive,
-    bdcode,
-    xmlhttpRequest;
+      failed = 0,
+      vip_type = 0,
+      interval = 0,
+      check_mode = false,
+      interval_mode = false,
+      file_info_list = [],
+      gen_success_list = [],
+      dir,
+      file_num,
+      gen_num,
+      gen_prog,
+      codeInfo,
+      recursive,
+      bdcode,
+      xmlhttpRequest;
   var myStyle = "style=\"width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;\"";
   var myBtnStyle = "style=\"height: 26px;line-height: 26px;vertical-align: middle;\"";
   var html_btn = "<a class=\"g-button g-button-blue href=\"javascript:;\" id=\"bdlink_btn\" title=\"\u79D2\u4F20\u94FE\u63A5\" style=\"display: inline-block;\"\">\n    <span class=\"g-button-right\"><em class=\"icon icon-disk\" title=\"\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6\"></em><span class=\"text\" style=\"width: auto;\">\u79D2\u4F20\u94FE\u63A5</span></span></a>";
@@ -71,6 +71,19 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   if (Base64.extendString) {
     Base64.extendString();
   }
+
+  var request = function request(opts) {
+    return new Promise(function (resolve, reject) {
+      GM_xmlhttpRequest(_objectSpread(_objectSpread({}, opts), {}, {
+        onload: function onload(res) {
+          resolve(res);
+        },
+        onerror: function onerror(err) {
+          reject(err);
+        }
+      }));
+    });
+  };
 
   function add_file_list(file_list) {
     var dir_list = [];
@@ -155,7 +168,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   }
 
   function initButtonEvent() {
-    $(document).on("click", ".gen-bdlink-button", function () {
+    $(document).on('click', '.gen-bdlink-button', function () {
       if (!GM_getValue('gen_no_first_1.3.3')) {
         Swal.fire({
           title: '首次使用请注意',
@@ -206,11 +219,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
   function initButtonHome() {
     var loop = setInterval(function () {
-      var html_tag = $("div.tcuLAu");
+      var html_tag = $('div.tcuLAu');
       if (!html_tag.length) return false;
       html_tag.append(html_btn);
       var loop2 = setInterval(function () {
-        var btn_tag = $("#bdlink_btn");
+        var btn_tag = $('#bdlink_btn');
         if (!btn_tag.length) return false;
         btn_tag.click(function () {
           GetInfo();
@@ -222,7 +235,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   }
 
   function initButtonGen() {
-    var listTools = getSystemContext().Broker.getButtonBroker("listTools");
+    var listTools = getSystemContext().Broker.getButtonBroker('listTools');
 
     if (listTools && listTools.$box) {
       $(listTools.$box).children('div').after(html_btn_gen);
@@ -235,7 +248,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   ;
 
   function getSystemContext() {
-    return unsafeWindow.require("system-core:context/context.js").instanceForSystem;
+    return unsafeWindow.require('system-core:context/context.js').instanceForSystem;
   }
 
   ;
@@ -378,9 +391,9 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }, bdcode && checkbox_par), {}, {
         onBeforeOpen: function onBeforeOpen() {
           var loop = setInterval(function () {
-            var html_tag = $("#check_md5_btn");
+            var html_tag = $('#check_md5_btn');
             if (!html_tag.length) return false;
-            $("#check_md5_btn").click(function () {
+            $('#check_md5_btn').click(function () {
               test_bdlink();
             });
             clearInterval(loop);
@@ -421,7 +434,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     var path = file_info.path;
     gen_num.textContent = (file_id + 1).toString() + ' / ' + file_info_list.length.toString();
-    gen_prog.textContent = "0%";
+    gen_prog.textContent = '0%';
     var dl_size = file_info.size < 262144 ? file_info.size - 1 : 262143;
 
     if (!failed) {
@@ -438,7 +451,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       onprogress: show_prog,
       ontimeout: function ontimeout(r) {
         myGenerater(file_id);
-        console.log("timeout !!!");
+        console.log('timeout !!!');
       },
       onerror: function onerror(r) {
         file_info.errno = 514;
@@ -468,7 +481,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             file_info.md5s = slice_md5;
           }
 
-          gen_prog.textContent = "100%";
+          gen_prog.textContent = '100%';
           setTimeout(function () {
             myGenerater(file_id + 1);
           }, interval_mode ? interval * 1000 : 1000);
@@ -919,11 +932,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       content.innerHTML += "<p><br></p>";
       content.innerHTML += html_feedback;
       var loop = setInterval(function () {
-        var html_tag = $("#kill_feedback");
+        var html_tag = $('#kill_feedback');
         if (!html_tag.length) return false;
-        $("#kill_feedback").click(function () {
+        $('#kill_feedback').click(function () {
           GM_setValue('kill_feedback', true);
-          $("#bdcode_feedback").remove();
+          $('#bdcode_feedback').remove();
         });
         clearInterval(loop);
       }, 50);
@@ -937,11 +950,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       content.innerHTML += html_donate;
 
       var _loop = setInterval(function () {
-        var html_tag = $("#kill_donate");
+        var html_tag = $('#kill_donate');
         if (!html_tag.length) return false;
-        $("#kill_donate").click(function () {
+        $('#kill_donate').click(function () {
           GM_setValue('kill_donate', true);
-          $("#bdcode_donate").remove();
+          $('#bdcode_donate').remove();
         });
         clearInterval(_loop);
       }, 50);
@@ -965,12 +978,23 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   }
 
   var injectStyle = function injectStyle() {
-    var style = GM_getResourceText("sweetalert2Css");
+    var style = GM_getResourceText('sweetalert2Css'); // 暴力猴直接粘贴脚本代码时可能不会将resource中的数据下载缓存，fallback到下载css代码
+
+    if (!style) {
+      request({
+        url: 'https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.css',
+        type: 'GET',
+        responseType: 'text'
+      }).then(function (res) {
+        style = res.response;
+      });
+    }
+
     GM_addStyle(style);
   };
 
   var showUpdateInfo = function showUpdateInfo() {
-    if (!GM_getValue("1.4.6_no_first")) {
+    if (!GM_getValue('1.4.6_no_first')) {
       Swal.fire({
         title: "\u79D2\u4F20\u94FE\u63A5\u63D0\u53D6 1.4.6 \u66F4\u65B0\u5185\u5BB9(21.1.14):",
         html: update_info,
@@ -978,9 +1002,9 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         scrollbarPadding: false,
         showCloseButton: true,
         allowOutsideClick: false,
-        confirmButtonText: "确定"
+        confirmButtonText: '确定'
       }).then(function (result) {
-        GM_setValue("1.4.6_no_first", true);
+        GM_setValue('1.4.6_no_first', true);
       });
     }
   };
@@ -988,7 +1012,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   function myInit() {
     injectStyle();
     var bdlink = GetInfo_url();
-    window.addEventListener("DOMContentLoaded", function () {
+    window.addEventListener('DOMContentLoaded', function () {
       bdlink ? GetInfo(bdlink) : showUpdateInfo();
       initButtonHome();
       initButtonGen();
