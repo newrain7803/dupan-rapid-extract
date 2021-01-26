@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.8
+// @version           1.4.9
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
-// @require           https://cdn.jsdelivr.net/npm/sweetalert2@8
+// @resource sweetalert2Css https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.css
+// @require           https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.js
 // @require           https://cdn.jsdelivr.net/npm/js-base64
 // @require           https://cdn.staticfile.org/spark-md5/3.0.0/spark-md5.min.js
 // @grant             GM_setValue
@@ -15,7 +16,9 @@
 // @grant             GM_setClipboard
 // @grant             GM_xmlhttpRequest
 // @grant             GM_info
-// @run-at            document-body
+// @grant             GM_getResourceText
+// @grant             GM_addStyle
+// @run-at            document-start
 // @connect           *
 // ==/UserScript==
 ! function () {
@@ -796,24 +799,11 @@
     }
 
     function GetInfo_url() {
-        var bdlink = href.match(/[\?#]bdlink=([\da-zA-Z/\+]+)&?/);
-
+        let bdlink = location.href.match(/[\?#]bdlink=([\da-zA-Z/\+]+)&?/);
         if (bdlink) {
-            bdlink = bdlink[1].fromBase64();
-            GetInfo(bdlink)
-        } else if (!GM_getValue('1.4.6_no_first')) {
-            Swal.fire({
-                title: `秒传链接提取 1.4.6 更新内容(21.1.14):`,
-                html: update_info,
-                heightAuto: false,
-                scrollbarPadding: false,
-                showCloseButton: true,
-                allowOutsideClick: false,
-                confirmButtonText: '确定'
-            }).then((result) => {
-                GM_setValue('1.4.6_no_first', true)
-            });
+          bdlink = bdlink[1].fromBase64();
         }
+        return bdlink;
     }
 
     function Add_content(content) {
@@ -863,25 +853,36 @@
         };
         GM_xmlhttpRequest(info_par);
     }
+    const injectStyle = () => {
+        const style = GM_getResourceText("sweetalert2Css");
+        GM_addStyle(style);
+    };
+
+    const showUpdateInfo = () => {
+      if (!GM_getValue("1.4.6_no_first")) {
+        Swal.fire({
+          title: `秒传链接提取 1.4.6 更新内容(21.1.14):`,
+          html: update_info,
+          heightAuto: false,
+          scrollbarPadding: false,
+          showCloseButton: true,
+          allowOutsideClick: false,
+          confirmButtonText: "确定"
+        }).then((result) => {
+          GM_setValue("1.4.6_no_first", true);
+        });
+      }
+    };
 
     function myInit() {
-        GetInfo_url();
+        injectStyle();
+        const bdlink = GetInfo_url();
+        window.addEventListener("DOMContentLoaded", () => {
+        bdlink ? GetInfo(bdlink) : showUpdateInfo();
         initButtonHome();
         initButtonGen();
         checkVipType();
-    }
-
-    function check_compa() {
-        if (GM_info.scriptHandler === 'Violentmonkey') {
-            if (!GM_getValue('check_compa'))
-                var mymessage = confirm('\"秒传链接提取\" 脚本在 \"暴力猴Violentmonkey\" 插件下可能无法正常运行\n建议更换为 \"油猴Tampermonkey\" 插件, 请问是否继续?');
-            if (mymessage) {
-                GM_setValue('check_compa', true)
-                document.addEventListener('DOMContentLoaded', myInit);
-            }
-        } else {
-            document.addEventListener('DOMContentLoaded', myInit);
-        }
+      });
     }
 
     const update_info =
@@ -962,6 +963,5 @@
         
         </span></div></div>`;
 
-    const href = window.location.href;
-    check_compa();
+    myInit();
 }();
