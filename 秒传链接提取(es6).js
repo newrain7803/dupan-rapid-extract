@@ -404,7 +404,7 @@
             onload: function (r) {
                 if (parseInt(r.status / 100) === 2) {
                     var responseHeaders = r.responseHeaders;
-                    var file_md5 = responseHeaders.match(/content-md5: ([\da-f]{32})/);
+                    var file_md5 = responseHeaders.match(/content-md5: ([\da-f]{32})/i);
                     if (file_md5) {
                         file_md5 = file_md5[1];
                     } else {
