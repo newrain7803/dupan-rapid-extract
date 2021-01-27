@@ -27,7 +27,7 @@
     const api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
     const pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
     const appid_list = ['266719', '265486', '250528', '778750', '498065', '309847'];
-    //使用'250528', '265486', '266719'，下载50M以上的文件会报403，黑号情况下部分文件也会报403
+    //使用'250528', '265486', '266719', 下载50M以上的文件会报403, 黑号情况下部分文件也会报403
     const bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', 'b912d5b77babf959865100bf1d0c2a19'];
     var select_list,
         failed = 0,
@@ -40,7 +40,7 @@
         dir, file_num, gen_num, gen_prog, codeInfo, recursive, bdcode, xmlhttpRequest;
     const myStyle = `style="width: 100%;height: 34px;display: block;line-height: 34px;text-align: center;"`;
     const myBtnStyle = `style="height: 26px;line-height: 26px;vertical-align: middle;"`;
-    const html_btn = `<a class="g-button g-button-blue href="javascript:;" id="bdlink_btn" title="秒传链接" style="display: inline-block;"">
+    const html_btn = `<a class="g-button g-button-blue" id="bdlink_btn" title="秒传链接" style="display: inline-block;"">
     <span class="g-button-right"><em class="icon icon-disk" title="秒传链接提取"></em><span class="text" style="width: auto;">秒传链接</span></span></a>`;
     const html_btn_gen = `<a class="g-button gen-bdlink-button"><span class="g-button-right"><em class="icon icon-share" title="生成秒传"></em><span class="text">生成秒传</span></span></a>`;
     const html_check_md5 = `<p ${myStyle}>测试秒传, 可防止秒传失效<a class="g-button g-button-blue" id="check_md5_btn" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">测试</span></span></a></p>`;
@@ -53,6 +53,12 @@
         input: 'checkbox',
         inputValue: GM_getValue('with_path'),
         inputPlaceholder: '导出文件夹目录结构',
+    };
+    var style_par = {
+        backdrop: 'rgba(0,0,0,0)'
+    };
+    var show_prog = function (r) {
+        gen_prog.textContent = `${parseInt((r.loaded/r.total)*100)}%`;
     };
 
     if (Base64.extendString) {
@@ -90,7 +96,7 @@
             Swal.fire({
                 type: 'info',
                 title: '选择中包含文件夹, 是否递归生成?',
-                text: '若选是，将同时生成各级子文件夹下的文件',
+                text: '若选是, 将同时生成各级子文件夹下的文件',
                 allowOutsideClick: false,
                 focusCancel: true,
                 showCancelButton: true,
@@ -98,6 +104,7 @@
                 showCloseButton: true,
                 confirmButtonText: '是',
                 cancelButtonText: '否',
+                ...style_par
             }).then((result) => {
                 if (result.value) {
                     recursive = true;
@@ -126,17 +133,24 @@
             type: 'GET',
             responseType: 'json',
             onload: function (r) {
-                if (!r.response.errno) {
-                    r.response.list.forEach(function (item) {
-                        item.isdir || file_info_list.push({
-                            'path': item.path,
-                            'size': item.size,
+                if (parseInt(r.status / 100) === 2) {
+                    if (!r.response.errno) {
+                        r.response.list.forEach(function (item) {
+                            item.isdir || file_info_list.push({
+                                'path': item.path,
+                                'size': item.size,
+                            });
                         });
-                    });
+                    } else {
+                        file_info_list.push({
+                            'path': path,
+                            'errno': 810
+                        });
+                    }
                 } else {
                     file_info_list.push({
                         'path': path,
-                        'errno': 810
+                        'errno': r.status
                     });
                 }
                 add_dir_list(dir_list, dir_id + 1);
@@ -159,6 +173,7 @@
                     title: '首次使用请注意',
                     showCloseButton: true,
                     allowOutsideClick: false,
+                    ...style_par,
                     html: '<p>弹出跨域访问窗口时,请选择"总是允许"或"总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/763ff5014cca49237cb3ede92b5b7ac5.png">'
                 }).then((result) => {
                     if (result.value) {
@@ -176,7 +191,8 @@
                     showCancelButton: true,
                     allowOutsideClick: false,
                     confirmButtonText: '确定',
-                    cancelButtonText: '取消'
+                    cancelButtonText: '取消',
+                    ...style_par
                 }).then((result) => {
                     if (result.value) {
                         var unfinish_info = GM_getValue('unfinish');
@@ -203,6 +219,7 @@
         let loop = setInterval(() => {
             var html_tag = $('div.tcuLAu');
             if (!html_tag.length) return false;
+            if (!$('#h5Input0').length) return false;
             html_tag.append(html_btn);
             let loop2 = setInterval(() => {
                 var btn_tag = $('#bdlink_btn');
@@ -213,7 +230,7 @@
                 clearInterval(loop2);
             }, 50);
             clearInterval(loop);
-        }, 500);
+        }, 50);
     }
 
     function initButtonGen() {
@@ -239,6 +256,7 @@
             title: '秒传生成中',
             showCloseButton: true,
             allowOutsideClick: false,
+            ...style_par,
             html: '<p>正在生成第 <gen_num></gen_num> 个</p><p><gen_prog></gen_prog></p>',
             onBeforeOpen: () => {
                 Swal.showLoading()
@@ -270,6 +288,7 @@
             showCancelButton: false,
             allowOutsideClick: false,
             confirmButtonText: '确定',
+            ...style_par,
             inputValidator: (value) => {
                 if (!value) {
                     return '不能为空';
@@ -303,7 +322,8 @@
                 showCancelButton: true,
                 allowOutsideClick: false,
                 confirmButtonText: '确定',
-                cancelButtonText: '返回'
+                cancelButtonText: '返回',
+                ...style_par
             }).then((result) => {
                 GM_setValue('show_test_warning', result.value)
                 if (!result.dismiss) {
@@ -354,6 +374,7 @@
                 allowOutsideClick: false,
                 html: bdcode ? (html_check_md5 + html_document + (failed_info && ('<p><br></p>' + failed_info))) : html_document + '<p><br></p>' + failed_info,
                 ...(bdcode && checkbox_par),
+                ...style_par,
                 onBeforeOpen: () => {
                     let loop = setInterval(() => {
                         var html_tag = $('#check_md5_btn');
@@ -421,13 +442,13 @@
                     var responseHeaders = r.responseHeaders;
                     var file_md5 = responseHeaders.match(/content-md5: ([\da-f]{32})/i);
                     if (file_md5) {
-                        file_md5 = file_md5[1];
+                        file_md5 = file_md5[1].toLowerCase();
                     } else {
                         file_info.errno = 996;
                         myGenerater(file_id + 1);
                         return;
                     }
-                    //bad_md5内的两个md5是和谐文件返回的，第一个是txt格式的"温馨提示.txt"，第二个是视频格式的（俗称5s）,第三个为新发现的8s视频文件
+                    //bad_md5内的三个md5是和谐文件返回的, 第一个是txt格式的"温馨提示.txt", 第二个是视频格式的（俗称5s）,第三个为新发现的8s视频文件
                     if (bad_md5.indexOf(file_md5) !== -1) {
                         file_info.errno = 1919;
                     } else {
@@ -606,7 +627,7 @@
                 title: `${check_mode ? '测试' : '转存'}完毕 共${codeInfo.length}个 失败${failed}个!`,
                 confirmButtonText: check_mode ? '复制秒传代码' : '确定',
                 showCloseButton: true,
-                html: '',
+                ...style_par,
                 ...(check_mode && checkbox_par),
                 onBeforeOpen: () => {
                     var content = Swal.getContent();
@@ -746,12 +767,16 @@
             input: 'textarea',
             inputValue: str,
             showCancelButton: true,
-            inputPlaceholder: '[支持 PanDL/梦姬/游侠/PCS-Go][支持批量]',
+            inputPlaceholder: '[支持 PanDL/梦姬标准/游侠/PCS-Go][支持批量]\n[输入setting进入设置页]',
             confirmButtonText: '确定',
             cancelButtonText: '取消',
+            ...style_par,
             inputValidator: (value) => {
                 if (!value) {
                     return '链接不能为空';
+                }
+                if (value === 'setting') {
+                    return;
                 }
                 codeInfo = DuParser.parse(value);
                 if (!codeInfo.length) {
@@ -759,8 +784,12 @@
                 }
             }
         }).then((result) => {
-            if (result.value) {
-                Process();
+            if (!result.dismiss) {
+                if (result.value === 'setting') {
+                    setting();
+                } else {
+                    Process();
+                }
             }
         });
     }
@@ -777,14 +806,15 @@
             Swal.fire({
                 title: '请输入保存路径',
                 input: 'text',
-                inputPlaceholder: '格式示例：/GTA5/，默认保存在根目录',
+                inputPlaceholder: '格式示例：/GTA5/, 默认保存在根目录',
                 inputValue: dir,
                 showCancelButton: true,
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
+                ...style_par,
                 inputValidator: (value) => {
                     if (value.match(/["\\\:*?<>|]/)) {
-                        return '路径中不能含有以下字符"\\:*?<>|，格式示例：/GTA5/';
+                        return '路径中不能含有以下字符"\\:*?<>|, 格式示例：/GTA5/';
                     }
                 }
             }).then((result) => {
@@ -805,6 +835,7 @@
             title: `文件${check_mode ? '测试' : '提取'}中`,
             html: `正在${check_mode ? '测试' : '转存'}第 <file_num></file_num> 个`,
             allowOutsideClick: false,
+            ...style_par,
             onBeforeOpen: () => {
                 Swal.showLoading()
                 var content = Swal.getContent();
@@ -914,6 +945,23 @@
         });
     }
 
+    function setting() {
+        Swal.fire({
+            title: '秒传链接提取-设置页',
+            showCancelButton: true,
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            allowOutsideClick: false
+        });
+    }
+
+    function myInit() {
+        GetInfo_url();
+        initButtonHome();
+        initButtonGen();
+        checkVipType();
+    }
+
     const update_info =
         `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
@@ -960,13 +1008,13 @@
 
         <p>秒传生成后加了一个导出文件路径的选项(默认不导出)</p>
 
-        <p>在输入保存路径的弹窗添加了校验，防止输入错误路径</p>
+        <p>在输入保存路径的弹窗添加了校验, 防止输入错误路径</p>
 
         <p><br></p>
 
         <p>1.2.5 更新内容(20.11.4):</p>
         
-        <p>优化按钮样式，添加了md5获取失败的报错</p>
+        <p>优化按钮样式, 添加了md5获取失败的报错</p>
 
         <p>修复从pan.baidu.com进入后不显示生成按钮的问题</p>
         
