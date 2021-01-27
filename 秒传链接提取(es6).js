@@ -6,7 +6,8 @@
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
-// @require           https://cdn.jsdelivr.net/npm/sweetalert2@8
+// @resource sweetalert2Css https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.css
+// @require           https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.js
 // @require           https://cdn.jsdelivr.net/npm/js-base64
 // @require           https://cdn.staticfile.org/spark-md5/3.0.0/spark-md5.min.js
 // @grant             GM_setValue
@@ -15,10 +16,12 @@
 // @grant             GM_setClipboard
 // @grant             GM_xmlhttpRequest
 // @grant             GM_info
-// @run-at            document-body
+// @grant             GM_getResourceText
+// @grant             GM_addStyle
+// @run-at            document-start
 // @connect           *
 // ==/UserScript==
-! function () {
+!function () {
     'use strict';
     const info_url = 'https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo'
     const api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
@@ -60,6 +63,21 @@
 
     if (Base64.extendString) {
         Base64.extendString();
+    }
+
+    const request = (opts) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                    ...opts,
+                    onload(res) {
+                        resolve(res)
+                    },
+                    onerror(err) {
+                        reject(err);
+                    },
+                }
+            );
+        })
     }
 
     function add_file_list(file_list) {
@@ -111,7 +129,7 @@
         }
         var path = dir_list[dir_id];
         var list_dir_par = {
-            url: api_url + `&path=${encodeURIComponent(path)}&recursion=${recursive?1:0}`,
+            url: api_url + `&path=${encodeURIComponent(path)}&recursion=${recursive ? 1 : 0}`,
             type: 'GET',
             responseType: 'json',
             onload: function (r) {
@@ -149,7 +167,7 @@
     }
 
     function initButtonEvent() {
-        $(document).on("click", ".gen-bdlink-button", function () {
+        $(document).on('click', '.gen-bdlink-button', function () {
             if (!GM_getValue('gen_no_first_1.3.3')) {
                 Swal.fire({
                     title: '首次使用请注意',
@@ -199,12 +217,12 @@
 
     function initButtonHome() {
         let loop = setInterval(() => {
-            var html_tag = $("div.tcuLAu");
+            var html_tag = $('div.tcuLAu');
             if (!html_tag.length) return false;
             if (!$('#h5Input0').length) return false;
             html_tag.append(html_btn);
             let loop2 = setInterval(() => {
-                var btn_tag = $("#bdlink_btn");
+                var btn_tag = $('#bdlink_btn');
                 if (!btn_tag.length) return false;
                 btn_tag.click(function () {
                     GetInfo();
@@ -216,7 +234,7 @@
     }
 
     function initButtonGen() {
-        var listTools = getSystemContext().Broker.getButtonBroker("listTools");
+        var listTools = getSystemContext().Broker.getButtonBroker('listTools');
         if (listTools && listTools.$box) {
             $(listTools.$box).children('div').after(html_btn_gen);
             initButtonEvent();
@@ -226,7 +244,7 @@
     };
 
     function getSystemContext() {
-        return unsafeWindow.require("system-core:context/context.js").instanceForSystem;
+        return unsafeWindow.require('system-core:context/context.js').instanceForSystem;
     };
 
     function Gen_bdlink(file_id = 0) {
@@ -289,6 +307,10 @@
             Gen_bdlink(file_id);
         });
     }
+
+    var show_prog = function (r) {
+        gen_prog.textContent = `${parseInt((r.loaded / r.total) * 100)}%`;
+    };
 
     function test_bdlink() {
         if (!GM_getValue('show_test_warning')) {
@@ -355,9 +377,9 @@
                 ...style_par,
                 onBeforeOpen: () => {
                     let loop = setInterval(() => {
-                        var html_tag = $("#check_md5_btn");
+                        var html_tag = $('#check_md5_btn');
                         if (!html_tag.length) return false;
-                        $("#check_md5_btn").click(function () {
+                        $('#check_md5_btn').click(function () {
                             test_bdlink();
                         });
                         clearInterval(loop);
@@ -392,7 +414,7 @@
         }
         var path = file_info.path;
         gen_num.textContent = (file_id + 1).toString() + ' / ' + file_info_list.length.toString();
-        gen_prog.textContent = "0%";
+        gen_prog.textContent = '0%';
 
         var dl_size = file_info.size < 262144 ? file_info.size - 1 : 262143;
         if (!failed) {
@@ -409,7 +431,7 @@
             onprogress: show_prog,
             ontimeout: function (r) {
                 myGenerater(file_id);
-                console.log("timeout !!!");
+                console.log('timeout !!!');
             },
             onerror: function (r) {
                 file_info.errno = 514;
@@ -436,7 +458,7 @@
                         file_info.md5 = file_md5;
                         file_info.md5s = slice_md5;
                     }
-                    gen_prog.textContent = "100%";
+                    gen_prog.textContent = '100%';
                     setTimeout(function () {
                         myGenerater(file_id + 1);
                     }, interval_mode ? interval * 1000 : 1000);
@@ -462,6 +484,7 @@
     function SimpleBuffer(str) {
         this.fromString(str);
     }
+
     SimpleBuffer.toStdHex = function toStdHex(n) {
         return ('0' + n.toString(16)).slice(-2);
     };
@@ -500,7 +523,9 @@
         return Array.prototype.slice.call(this.buf, index, index + size).map(SimpleBuffer.toStdHex).join('');
     };
 
-    function DuParser() {}
+    function DuParser() {
+    }
+
     DuParser.parse = function generalDuCodeParse(szUrl) {
         var r;
         if (szUrl.indexOf('bdpan') === 0) {
@@ -599,7 +624,7 @@
     function saveFile(i, try_flag) {
         if (i >= codeInfo.length) {
             Swal.fire({
-                title: `${check_mode?'测试':'转存'}完毕 共${codeInfo.length}个 失败${failed}个!`,
+                title: `${check_mode ? '测试' : '转存'}完毕 共${codeInfo.length}个 失败${failed}个!`,
                 confirmButtonText: check_mode ? '复制秒传代码' : '确定',
                 showCloseButton: true,
                 ...style_par,
@@ -664,7 +689,7 @@
         var file = codeInfo[i];
         file_num.textContent = (i + 1).toString() + ' / ' + codeInfo.length.toString();
         $.ajax({
-            url: `/api/rapidupload${check_mode?'?rtype=3':''}`,
+            url: `/api/rapidupload${check_mode ? '?rtype=3' : ''}`,
             type: 'POST',
             data: {
                 path: dir + file.path,
@@ -714,11 +739,11 @@
             case 2:
                 return '转存失败(尝试重新登录网盘账号)';
             case 3939:
-                return `秒传不支持大于20G的文件,文件大小:${(file_size/(1024**3)).toFixed(2)}G`;
-                //文件大于20G时访问秒传接口实际会返回#2
+                return `秒传不支持大于20G的文件,文件大小:${(file_size / (1024 ** 3)).toFixed(2)}G`;
+            //文件大于20G时访问秒传接口实际会返回#2
             case 2333:
                 return '链接内的文件路径错误(不能含有以下字符"\\:*?<>|)';
-                //文件路径错误时接口实际也是返回#2
+            //文件路径错误时接口实际也是返回#2
             case -10:
                 return '网盘容量已满';
             case 114:
@@ -807,8 +832,8 @@
 
     function save_alert() {
         Swal.fire({
-            title: `文件${check_mode?'测试':'提取'}中`,
-            html: `正在${check_mode?'测试':'转存'}第 <file_num></file_num> 个`,
+            title: `文件${check_mode ? '测试' : '提取'}中`,
+            html: `正在${check_mode ? '测试' : '转存'}第 <file_num></file_num> 个`,
             allowOutsideClick: false,
             ...style_par,
             onBeforeOpen: () => {
@@ -823,25 +848,11 @@
     }
 
     function GetInfo_url() {
-        var bdlink = href.match(/[\?#]bdlink=([\da-zA-Z/\+]+)&?/);
-
+        let bdlink = location.href.match(/[\?#]bdlink=([\da-zA-Z/\+]+)&?/);
         if (bdlink) {
             bdlink = bdlink[1].fromBase64();
-            GetInfo(bdlink)
-        } else if (!GM_getValue('1.4.6_no_first')) {
-            Swal.fire({
-                title: `秒传链接提取 1.4.6 更新内容(21.1.14):`,
-                html: update_info,
-                heightAuto: false,
-                scrollbarPadding: false,
-                showCloseButton: true,
-                allowOutsideClick: false,
-                ...style_par,
-                confirmButtonText: '确定'
-            }).then((result) => {
-                GM_setValue('1.4.6_no_first', true)
-            });
         }
+        return bdlink;
     }
 
     function Add_content(content) {
@@ -851,11 +862,11 @@
             content.innerHTML += `<p><br></p>`;
             content.innerHTML += html_feedback;
             let loop = setInterval(() => {
-                var html_tag = $("#kill_feedback");
+                var html_tag = $('#kill_feedback');
                 if (!html_tag.length) return false;
-                $("#kill_feedback").click(function () {
+                $('#kill_feedback').click(function () {
                     GM_setValue('kill_feedback', true);
-                    $("#bdcode_feedback").remove();
+                    $('#bdcode_feedback').remove();
                 });
                 clearInterval(loop);
             }, 50);
@@ -866,11 +877,11 @@
             }
             content.innerHTML += html_donate;
             let loop = setInterval(() => {
-                var html_tag = $("#kill_donate");
+                var html_tag = $('#kill_donate');
                 if (!html_tag.length) return false;
-                $("#kill_donate").click(function () {
+                $('#kill_donate').click(function () {
                     GM_setValue('kill_donate', true);
-                    $("#bdcode_donate").remove();
+                    $('#bdcode_donate').remove();
                 });
                 clearInterval(loop);
             }, 50);
@@ -892,17 +903,46 @@
         GM_xmlhttpRequest(info_par);
     }
 
-    function check_compa() {
-        if (GM_info.scriptHandler === 'Violentmonkey') {
-            if (!GM_getValue('check_compa'))
-                var mymessage = confirm('\"秒传链接提取\" 脚本在 \"暴力猴Violentmonkey\" 插件下可能无法正常运行\n建议更换为 \"油猴Tampermonkey\" 插件, 请问是否继续?');
-            if (mymessage) {
-                GM_setValue('check_compa', true)
-                document.addEventListener('DOMContentLoaded', myInit);
-            }
-        } else {
-            document.addEventListener('DOMContentLoaded', myInit);
+    const injectStyle =  () => {
+        let style = GM_getResourceText('sweetalert2Css');
+        // 暴力猴直接粘贴脚本代码时可能不会将resource中的数据下载缓存，fallback到下载css代码
+        if (!style) {
+           request({
+                url: 'https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.css',
+                type: 'GET',
+                responseType: 'text'
+            }).then(res => {
+                style = res.response
+           })
         }
+        GM_addStyle(style);
+    };
+
+    const showUpdateInfo = () => {
+        if (!GM_getValue('1.4.6_no_first')) {
+            Swal.fire({
+                title: `秒传链接提取 1.4.6 更新内容(21.1.14):`,
+                html: update_info,
+                heightAuto: false,
+                scrollbarPadding: false,
+                showCloseButton: true,
+                allowOutsideClick: false,
+                confirmButtonText: '确定'
+            }).then((result) => {
+                GM_setValue('1.4.6_no_first', true);
+            });
+        }
+    };
+
+    function myInit() {
+        injectStyle();
+        const bdlink = GetInfo_url();
+        window.addEventListener('DOMContentLoaded', () => {
+            bdlink ? GetInfo(bdlink) : showUpdateInfo();
+            initButtonHome();
+            initButtonGen();
+            checkVipType();
+        });
     }
 
     function setting() {
@@ -1000,6 +1040,5 @@
         
         </span></div></div>`;
 
-    const href = window.location.href;
-    document.addEventListener('DOMContentLoaded', myInit);
+    myInit();
 }();
