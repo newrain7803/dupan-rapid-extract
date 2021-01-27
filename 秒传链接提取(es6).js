@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.4.9
+// @version           1.5.0
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -21,7 +21,7 @@
 // @run-at            document-start
 // @connect           *
 // ==/UserScript==
-!function () {
+! function () {
     'use strict';
     const info_url = 'https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo'
     const api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
@@ -29,6 +29,14 @@
     const appid_list = ['266719', '265486', '250528', '778750', '498065', '309847'];
     //使用'250528', '265486', '266719', 下载50M以上的文件会报403, 黑号情况下部分文件也会报403
     const bad_md5 = ['fcadf26fc508b8039bee8f0901d9c58e', '2d9a55b7d5fe70e74ce8c3b2be8f8e43', 'b912d5b77babf959865100bf1d0c2a19'];
+    const css_url = {
+        'Minimal': 'https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.css',
+        'Dark': 'https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css',
+        'WordPress Admin': 'https://cdn.jsdelivr.net/npm/@sweetalert2/theme-wordpress-admin@4/wordpress-admin.css',
+        'Material UI': 'https://cdn.jsdelivr.net/npm/@sweetalert2/theme-material-ui@4/material-ui.css',
+        'Bulma': 'https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@4/bulma.css',
+        'Bootstrap 4': 'https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4@4/bootstrap-4.css'
+    };
     var select_list,
         failed = 0,
         vip_type = 0,
@@ -47,15 +55,13 @@
     const html_document = `<p ${myStyle}>分享过程中遇到问题可参考<a class="g-button g-button-blue" ${myBtnStyle} href="https://shimo.im/docs/TZ1JJuEjOM0wnFDH" rel="noopener noreferrer" target="_blank"><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">防爆教程</span></span></a></p>`;
     const html_donate = `<p id="bdcode_donate" ${myStyle}>若喜欢该脚本, 可前往 <a href="https://afdian.net/@mengzonefire" rel="noopener noreferrer" target="_blank">赞助页</a> 支持作者
     <a class="g-button" id="kill_donate" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">不再显示</span></span></a></p>`;
-    const html_feedback = `<p id="bdcode_feedback" ${myStyle}>若脚本使用有任何问题, 可前往 <a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">脚本页</a> 反馈
+    const html_feedback = `<p id="bdcode_feedback" ${myStyle}>若有任何疑问, 可前往 <a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">脚本页</a> 反馈
     <a class="g-button" id="kill_feedback" ${myBtnStyle}><span class="g-button-right" ${myBtnStyle}><span class="text" style="width: auto;">不再显示</span></span></a></p>`;
+    const csd_hint_html = '<p>弹出跨域访问窗口时,请选择"总是允许"或"总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/763ff5014cca49237cb3ede92b5b7ac5.png">';
     var checkbox_par = {
         input: 'checkbox',
         inputValue: GM_getValue('with_path'),
         inputPlaceholder: '导出文件夹目录结构',
-    };
-    var style_par = {
-        backdrop: 'rgba(0,0,0,0)'
     };
     var show_prog = function (r) {
         gen_prog.textContent = `${parseInt((r.loaded/r.total)*100)}%`;
@@ -63,21 +69,6 @@
 
     if (Base64.extendString) {
         Base64.extendString();
-    }
-
-    const request = (opts) => {
-        return new Promise((resolve, reject) => {
-            GM_xmlhttpRequest({
-                    ...opts,
-                    onload(res) {
-                        resolve(res)
-                    },
-                    onerror(err) {
-                        reject(err);
-                    },
-                }
-            );
-        })
     }
 
     function add_file_list(file_list) {
@@ -104,7 +95,7 @@
                 showCloseButton: true,
                 confirmButtonText: '是',
                 cancelButtonText: '否',
-                ...style_par
+
             }).then((result) => {
                 if (result.value) {
                     recursive = true;
@@ -168,16 +159,15 @@
 
     function initButtonEvent() {
         $(document).on('click', '.gen-bdlink-button', function () {
-            if (!GM_getValue('gen_no_first_1.3.3')) {
+            if (!GM_getValue('gen_no_first')) {
                 Swal.fire({
                     title: '首次使用请注意',
                     showCloseButton: true,
                     allowOutsideClick: false,
-                    ...style_par,
-                    html: '<p>弹出跨域访问窗口时,请选择"总是允许"或"总是允许全部域名"</p><img style="max-width: 100%; height: auto" src="https://pic.rmb.bdstatic.com/bjh/763ff5014cca49237cb3ede92b5b7ac5.png">'
+                    html: csd_hint_html,
                 }).then((result) => {
                     if (result.value) {
-                        GM_setValue('gen_no_first_1.3.3', true);
+                        GM_setValue('gen_no_first', true);
                         select_list = getSelectedFileList();
                         add_file_list(select_list);
                     }
@@ -192,7 +182,6 @@
                     allowOutsideClick: false,
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    ...style_par
                 }).then((result) => {
                     if (result.value) {
                         var unfinish_info = GM_getValue('unfinish');
@@ -256,7 +245,6 @@
             title: '秒传生成中',
             showCloseButton: true,
             allowOutsideClick: false,
-            ...style_par,
             html: '<p>正在生成第 <gen_num></gen_num> 个</p><p><gen_prog></gen_prog></p>',
             onBeforeOpen: () => {
                 Swal.showLoading()
@@ -288,7 +276,6 @@
             showCancelButton: false,
             allowOutsideClick: false,
             confirmButtonText: '确定',
-            ...style_par,
             inputValidator: (value) => {
                 if (!value) {
                     return '不能为空';
@@ -322,8 +309,7 @@
                 showCancelButton: true,
                 allowOutsideClick: false,
                 confirmButtonText: '确定',
-                cancelButtonText: '返回',
-                ...style_par
+                cancelButtonText: '返回'
             }).then((result) => {
                 GM_setValue('show_test_warning', result.value)
                 if (!result.dismiss) {
@@ -374,7 +360,6 @@
                 allowOutsideClick: false,
                 html: bdcode ? (html_check_md5 + html_document + (failed_info && ('<p><br></p>' + failed_info))) : html_document + '<p><br></p>' + failed_info,
                 ...(bdcode && checkbox_par),
-                ...style_par,
                 onBeforeOpen: () => {
                     let loop = setInterval(() => {
                         var html_tag = $('#check_md5_btn');
@@ -449,7 +434,7 @@
                         return;
                     }
                     //bad_md5内的三个md5是和谐文件返回的, 第一个是txt格式的"温馨提示.txt", 第二个是视频格式的（俗称5s）,第三个为新发现的8s视频文件
-                    if (bad_md5.indexOf(file_md5) !== -1) {
+                    if (bad_md5.indexOf(file_md5) !== -1 || r.finalUrl.indexOf('issuecdn.baidupcs.com') !== -1) {
                         file_info.errno = 1919;
                     } else {
                         var spark = new SparkMD5.ArrayBuffer();
@@ -523,8 +508,7 @@
         return Array.prototype.slice.call(this.buf, index, index + size).map(SimpleBuffer.toStdHex).join('');
     };
 
-    function DuParser() {
-    }
+    function DuParser() {}
 
     DuParser.parse = function generalDuCodeParse(szUrl) {
         var r;
@@ -627,7 +611,6 @@
                 title: `${check_mode ? '测试' : '转存'}完毕 共${codeInfo.length}个 失败${failed}个!`,
                 confirmButtonText: check_mode ? '复制秒传代码' : '确定',
                 showCloseButton: true,
-                ...style_par,
                 ...(check_mode && checkbox_par),
                 onBeforeOpen: () => {
                     var content = Swal.getContent();
@@ -740,10 +723,10 @@
                 return '转存失败(尝试重新登录网盘账号)';
             case 3939:
                 return `秒传不支持大于20G的文件,文件大小:${(file_size / (1024 ** 3)).toFixed(2)}G`;
-            //文件大于20G时访问秒传接口实际会返回#2
+                //文件大于20G时访问秒传接口实际会返回#2
             case 2333:
                 return '链接内的文件路径错误(不能含有以下字符"\\:*?<>|)';
-            //文件路径错误时接口实际也是返回#2
+                //文件路径错误时接口实际也是返回#2
             case -10:
                 return '网盘容量已满';
             case 114:
@@ -770,7 +753,6 @@
             inputPlaceholder: '[支持 PanDL/梦姬标准/游侠/PCS-Go][支持批量]\n[输入setting进入设置页]',
             confirmButtonText: '确定',
             cancelButtonText: '取消',
-            ...style_par,
             inputValidator: (value) => {
                 if (!value) {
                     return '链接不能为空';
@@ -811,7 +793,6 @@
                 showCancelButton: true,
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
-                ...style_par,
                 inputValidator: (value) => {
                     if (value.match(/["\\\:*?<>|]/)) {
                         return '路径中不能含有以下字符"\\:*?<>|, 格式示例：/GTA5/';
@@ -835,7 +816,6 @@
             title: `文件${check_mode ? '测试' : '提取'}中`,
             html: `正在${check_mode ? '测试' : '转存'}第 <file_num></file_num> 个`,
             allowOutsideClick: false,
-            ...style_par,
             onBeforeOpen: () => {
                 Swal.showLoading()
                 var content = Swal.getContent();
@@ -903,68 +883,111 @@
         GM_xmlhttpRequest(info_par);
     }
 
-    const injectStyle =  () => {
+    const injectStyle = () => {
         let style = GM_getResourceText('sweetalert2Css');
         // 暴力猴直接粘贴脚本代码时可能不会将resource中的数据下载缓存，fallback到下载css代码
-        if (!style) {
-           request({
-                url: 'https://cdn.jsdelivr.net/npm/sweetalert2@8/dist/sweetalert2.min.css',
-                type: 'GET',
-                responseType: 'text'
-            }).then(res => {
-                style = res.response
-           })
+        let themes = GM_getValue('Themes') || 'Minimal';
+        console.log(themes);
+        let css_code = GM_getValue(themes);
+        if (css_code) {
+            GM_addStyle(css_code);
+            return;
         }
-        GM_addStyle(style);
-    };
+        if (style && themes === 'Minimal') {
+            GM_setValue(themes, style);
+            GM_addStyle(style);
+            return;
+        }
+        GM_xmlhttpRequest({
+                url: css_url[themes],
+                type: 'GET',
+                responseType: 'text',
+                onload: function (r) {
+                    style = r.response;
+                    GM_setValue(themes, style);
+                    GM_addStyle(style);
+                },
+                onerror: function (r) {
+                    alert('秒传链接提取:\n外部资源加载失败, 脚本无法运行, 请检查网络或尝试更换DNS');
+                }
+            })
+        };
 
-    const showUpdateInfo = () => {
-        if (!GM_getValue('1.4.6_no_first')) {
-            Swal.fire({
-                title: `秒传链接提取 1.4.6 更新内容(21.1.14):`,
-                html: update_info,
-                heightAuto: false,
-                scrollbarPadding: false,
-                showCloseButton: true,
-                allowOutsideClick: false,
-                confirmButtonText: '确定'
-            }).then((result) => {
-                GM_setValue('1.4.6_no_first', true);
+        const showUpdateInfo = () => {
+            if (!GM_getValue('1.4.9_no_first')) {
+                Swal.fire({
+                    title: `秒传链接提取 1.4.9 更新内容(21.1.28):`,
+                    html: update_info,
+                    heightAuto: false,
+                    scrollbarPadding: false,
+                    showCloseButton: true,
+                    allowOutsideClick: false,
+                    confirmButtonText: '确定'
+                }).then((result) => {
+                    GM_setValue('1.4.9_no_first', true);
+                });
+            }
+        };
+
+        function myInit() {
+            injectStyle();
+            const bdlink = GetInfo_url();
+            window.addEventListener('DOMContentLoaded', () => {
+                bdlink ? GetInfo(bdlink) : showUpdateInfo();
+                initButtonHome();
+                initButtonGen();
+                checkVipType();
             });
         }
-    };
 
-    function myInit() {
-        injectStyle();
-        const bdlink = GetInfo_url();
-        window.addEventListener('DOMContentLoaded', () => {
-            bdlink ? GetInfo(bdlink) : showUpdateInfo();
-            initButtonHome();
-            initButtonGen();
-            checkVipType();
-        });
-    }
+        function setting() {
+            Swal.fire({
+                title: '秒传链接提取 设置页',
+                showCloseButton: true,
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                allowOutsideClick: false,
+                input: 'select',
+                inputValue: GM_getValue('Themes') || 'Minimal',
+                inputOptions: {
+                    'Minimal': 'Minimal 白色主题(默认)',
+                    'Bulma': 'Bulma 白色简约',
+                    'Bootstrap 4': 'Bootstrap4 白色简约',
+                    'Material UI': 'MaterialUI 白色主题',
+                    'Dark': 'Dark 黑色主题',
+                    'WordPress Admin': 'WordPressAdmin 灰色主题'
+                }
+            }).then((result) => {
+                if (!result.dismiss) {
+                    GM_setValue('Themes', result.value);
+                    Swal.fire({
+                        title: '设置成功 刷新页面生效',
+                        showCloseButton: true,
+                        allowOutsideClick: false,
+                        html: csd_hint_html
+                    });
+                }
+            });
+        }
 
-    function setting() {
-        Swal.fire({
-            title: '秒传链接提取-设置页',
-            showCancelButton: true,
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            allowOutsideClick: false
-        });
-    }
-
-    function myInit() {
-        GetInfo_url();
-        initButtonHome();
-        initButtonGen();
-        checkVipType();
-    }
-
-    const update_info =
-        `<div class="panel-body" style="height: 250px; overflow-y:scroll">
+        const update_info =
+            `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
+        
+        <p>1. 重新兼容了暴力猴插件, 感谢Trendymen提供的代码</p>
+
+        <p>2. 新增更换主题的功能, 在秒传输入框中输入setting进入设置页, 更换为其他主题, 即可避免弹窗时的背景变暗</p>
+
+        <p>3. 修改了部分代码逻辑, 秒传按钮不会再出现在最左边了</p>
+
+        <p><br></p>
+
+        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+
+        <p><br></p>
+
+        <p>秒传链接提取 1.4.6 更新内容(21.1.14):</p>
 
         <p>本次更新针对生成功能做了优化:</p>
 
@@ -974,11 +997,7 @@
 
         <p><br></p>
 
-        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
-
-        <p><br></p>
-
-        <p>1.4.5 更新内容(21.1.12)</p>
+        <p>1.4.5 更新内容(21.1.12):</p>
 
         <p>修复了1.4.0后可能出现的秒传按钮无效、显示多个秒传按钮的问题</p>
 
@@ -1040,5 +1059,5 @@
         
         </span></div></div>`;
 
-    myInit();
-}();
+        myInit();
+    }();
