@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.5.0
+// @version           1.5.1
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -711,6 +711,8 @@
 
     function checkErrno(errno, file_size = 0) {
         switch (errno) {
+            case -7:
+                return '保存路径存在非法字符';
             case -8:
                 return '文件已存在';
             case 400:
@@ -987,7 +989,7 @@
 
         <p><br></p>
 
-        <p>秒传链接提取 1.4.6 更新内容(21.1.14):</p>
+        <p>1.4.6 更新内容(21.1.14):</p>
 
         <p>本次更新针对生成功能做了优化:</p>
 
