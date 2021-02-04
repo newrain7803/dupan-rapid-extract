@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.5.1
+// @version           1.5.2
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -634,8 +634,11 @@
                         }
                     });
                     Add_content(document.createElement('div'));
-                    const _dir = (dir || '').replace(/\/$/, '');
+                    var _dir = (dir || '').replace(/\/$/, '');
                     if (_dir) {
+                        if (_dir.charAt(0) !== '/') {
+                            _dir = '/' + _dir;
+                        }
                         const cBtn = Swal.getConfirmButton();
                         const btn = cBtn.cloneNode();
                         btn.textContent = '打开目录';
