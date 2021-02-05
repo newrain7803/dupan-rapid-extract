@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.5.2
+// @version           1.5.3
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -23,7 +23,8 @@
 // ==/UserScript==
 ! function () {
     'use strict';
-    const info_url = 'https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo'
+    const meta_url = 'http://pcs.baidu.com/rest/2.0/pcs/file?app_id=778750&method=meta&path=';
+    const info_url = 'https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo';
     const api_url = 'http://pan.baidu.com/rest/2.0/xpan/multimedia?method=listall&order=name&limit=10000';
     const pcs_url = 'https://pcs.baidu.com/rest/2.0/pcs/file';
     const appid_list = ['266719', '265486', '250528', '778750', '498065', '309847'];
@@ -405,7 +406,6 @@
         if (!failed) {
             appid_id = file_info.size < 50000000 ? 0 : 3;
         }
-
         var get_dl_par = {
             url: pcs_url + `?app_id=${appid_list[appid_id]}&method=download&path=${encodeURIComponent(path)}`,
             type: 'GET',
@@ -429,8 +429,7 @@
                     if (file_md5) {
                         file_md5 = file_md5[1].toLowerCase();
                     } else {
-                        file_info.errno = 996;
-                        myGenerater(file_id + 1);
+                        try_get_md5(file_id, r.response);
                         return;
                     }
                     //bad_md5内的三个md5是和谐文件返回的, 第一个是txt格式的"温馨提示.txt", 第二个是视频格式的（俗称5s）,第三个为新发现的8s视频文件
@@ -448,7 +447,7 @@
                         myGenerater(file_id + 1);
                     }, interval_mode ? interval * 1000 : 1000);
                 } else {
-                    console.log(`use appid: ${appid_list[appid_id]}`);
+                    console.log(`return #403, appid: ${appid_list[appid_id]}`);
                     if (r.status == 403 && appid_id < (appid_list.length - 1)) {
                         myGenerater(file_id, appid_id + 1, true);
                     } else {
@@ -459,7 +458,28 @@
             }
         };
         xmlhttpRequest = GM_xmlhttpRequest(get_dl_par);
-    };
+    }
+
+    function try_get_md5(file_id, file_date) {
+        var file_info = file_info_list[file_id];
+        var get_dl_par = {
+            url: meta_url + encodeURIComponent(file_info.path),
+            type: 'GET',
+            onload: function (r) {
+                var file_md5 = r.responseText.match(/"block_list":\["([\da-f]{32})"\]/i) || r.responseText.match(/md5":"([\da-f]{32})"/i)
+                if (file_md5) {
+                    file_info.md5 = file_md5[1].toLowerCase();
+                    var spark = new SparkMD5.ArrayBuffer();
+                    spark.append(file_date);
+                    file_info.md5s = spark.end();
+                } else {
+                    file_info.errno = 996;
+                }
+                myGenerater(file_id + 1);
+            }
+        }
+        GM_xmlhttpRequest(get_dl_par);
+    }
 
     /**
      * 一个简单的类似于 NodeJS Buffer 的实现.
@@ -904,91 +924,97 @@
             return;
         }
         GM_xmlhttpRequest({
-                url: css_url[themes],
-                type: 'GET',
-                responseType: 'text',
-                onload: function (r) {
-                    style = r.response;
-                    GM_setValue(themes, style);
-                    GM_addStyle(style);
-                },
-                onerror: function (r) {
-                    alert('秒传链接提取:\n外部资源加载失败, 脚本无法运行, 请检查网络或尝试更换DNS');
-                }
-            })
-        };
+            url: css_url[themes],
+            type: 'GET',
+            responseType: 'text',
+            onload: function (r) {
+                style = r.response;
+                GM_setValue(themes, style);
+                GM_addStyle(style);
+            },
+            onerror: function (r) {
+                alert('秒传链接提取:\n外部资源加载失败, 脚本无法运行, 请检查网络或尝试更换DNS');
+            }
+        })
+    };
 
-        const showUpdateInfo = () => {
-            if (!GM_getValue('1.4.9_no_first')) {
+    const showUpdateInfo = () => {
+        if (!GM_getValue('1.5.3_no_first')) {
+            Swal.fire({
+                title: `秒传链接提取 1.5.3 更新内容(21.2.6):`,
+                html: update_info,
+                heightAuto: false,
+                scrollbarPadding: false,
+                showCloseButton: true,
+                allowOutsideClick: false,
+                confirmButtonText: '确定'
+            }).then((result) => {
+                GM_setValue('1.5.3_no_first', true);
+            });
+        }
+    };
+
+    function myInit() {
+        injectStyle();
+        const bdlink = GetInfo_url();
+        window.addEventListener('DOMContentLoaded', () => {
+            bdlink ? GetInfo(bdlink) : showUpdateInfo();
+            initButtonHome();
+            initButtonGen();
+            checkVipType();
+        });
+    }
+
+    function setting() {
+        Swal.fire({
+            title: '秒传链接提取 设置页',
+            showCloseButton: true,
+            showCancelButton: true,
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            allowOutsideClick: false,
+            input: 'select',
+            inputValue: GM_getValue('Themes') || 'Minimal',
+            inputOptions: {
+                'Minimal': 'Minimal 白色主题(默认)',
+                'Bulma': 'Bulma 白色简约',
+                'Bootstrap 4': 'Bootstrap4 白色简约',
+                'Material UI': 'MaterialUI 白色主题',
+                'Dark': 'Dark 黑色主题',
+                'WordPress Admin': 'WordPressAdmin 灰色主题'
+            }
+        }).then((result) => {
+            if (!result.dismiss) {
+                GM_setValue('Themes', result.value);
                 Swal.fire({
-                    title: `秒传链接提取 1.4.9 更新内容(21.1.28):`,
-                    html: update_info,
-                    heightAuto: false,
-                    scrollbarPadding: false,
+                    title: '设置成功 刷新页面生效',
                     showCloseButton: true,
                     allowOutsideClick: false,
-                    confirmButtonText: '确定'
-                }).then((result) => {
-                    GM_setValue('1.4.9_no_first', true);
+                    html: csd_hint_html
                 });
             }
-        };
+        });
+    }
 
-        function myInit() {
-            injectStyle();
-            const bdlink = GetInfo_url();
-            window.addEventListener('DOMContentLoaded', () => {
-                bdlink ? GetInfo(bdlink) : showUpdateInfo();
-                initButtonHome();
-                initButtonGen();
-                checkVipType();
-            });
-        }
-
-        function setting() {
-            Swal.fire({
-                title: '秒传链接提取 设置页',
-                showCloseButton: true,
-                showCancelButton: true,
-                confirmButtonText: '确定',
-                cancelButtonText: '取消',
-                allowOutsideClick: false,
-                input: 'select',
-                inputValue: GM_getValue('Themes') || 'Minimal',
-                inputOptions: {
-                    'Minimal': 'Minimal 白色主题(默认)',
-                    'Bulma': 'Bulma 白色简约',
-                    'Bootstrap 4': 'Bootstrap4 白色简约',
-                    'Material UI': 'MaterialUI 白色主题',
-                    'Dark': 'Dark 黑色主题',
-                    'WordPress Admin': 'WordPressAdmin 灰色主题'
-                }
-            }).then((result) => {
-                if (!result.dismiss) {
-                    GM_setValue('Themes', result.value);
-                    Swal.fire({
-                        title: '设置成功 刷新页面生效',
-                        showCloseButton: true,
-                        allowOutsideClick: false,
-                        html: csd_hint_html
-                    });
-                }
-            });
-        }
-
-        const update_info =
-            `<div class="panel-body" style="height: 250px; overflow-y:scroll">
+    const update_info =
+        `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
+
+        <p>修复了生成秒传时, 秒传有效, 仍提示"md5获取失败(#996)"的问题</p>
+
+        <p><br></p>
+
+        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+
+        <p><br></p>
+        
+        <p>1.4.9 更新内容(21.1.28):</p>
         
         <p>1. 重新兼容了暴力猴插件, 感谢Trendymen提供的代码</p>
 
         <p>2. 新增更换主题的功能, 在秒传输入框中输入setting进入设置页, 更换为其他主题, 即可避免弹窗时的背景变暗</p>
 
         <p>3. 修改了部分代码逻辑, 秒传按钮不会再出现在最左边了</p>
-
-        <p><br></p>
-
-        <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
 
         <p><br></p>
 
@@ -1064,5 +1090,5 @@
         
         </span></div></div>`;
 
-        myInit();
-    }();
+    myInit();
+}();
