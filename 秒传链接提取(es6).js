@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              秒传链接提取
 // @namespace         moe.cangku.mengzonefire
-// @version           1.5.3
+// @version           1.5.4
 // @description       用于提取和生成百度网盘秒传链接
 // @author            mengzonefire
 // @match             *://pan.baidu.com/disk/home*
@@ -939,9 +939,9 @@
     };
 
     const showUpdateInfo = () => {
-        if (!GM_getValue('1.5.3_no_first')) {
+        if (!GM_getValue('1.5.4_no_first')) {
             Swal.fire({
-                title: `秒传链接提取 1.5.3 更新内容(21.2.6):`,
+                title: `秒传链接提取 1.5.4 更新内容(21.2.11):`,
                 html: update_info,
                 heightAuto: false,
                 scrollbarPadding: false,
@@ -949,7 +949,7 @@
                 allowOutsideClick: false,
                 confirmButtonText: '确定'
             }).then((result) => {
-                GM_setValue('1.5.3_no_first', true);
+                GM_setValue('1.5.4_no_first', true);
             });
         }
     };
@@ -1000,11 +1000,19 @@
         `<div class="panel-body" style="height: 250px; overflow-y:scroll">
         <div style="border: 1px  #000000; width: 100%; margin: 0 auto;"><span>
 
-        <p>修复了生成秒传时, 秒传有效, 仍提示"md5获取失败(#996)"的问题</p>
+        <p>面向分享者的 <a href="https://shimo.im/docs/TZ1JJuEjOM0wnFDH" rel="noopener noreferrer" target="_blank">防爆教程</a> 的防和谐方法更新:</p>
 
+        <p>经测试, 原教程的 "固实压缩+加密文件名" 已无法再防和谐(在度盘移动端依旧可以在线解压), 目前有效的防和谐方法请参考教程内的 <span style="color: red;">"双层压缩"</span></p>
+        
         <p><br></p>
 
         <p>若出现任何问题请前往<a href="https://greasyfork.org/zh-CN/scripts/397324" rel="noopener noreferrer" target="_blank">greasyfork页</a>反馈</p>
+
+        <p><br></p>
+        
+        <p>1.4.3 更新内容(21.2.6):</p>
+
+        <p>修复了生成秒传时, 秒传有效, 仍提示"md5获取失败(#996)"的问题</p>
 
         <p><br></p>
         
